@@ -41,10 +41,25 @@ Shot shots[AMUNITION] = { {{0, 0}, 0} };
 
 int tmp_obstacle[2] = {3,5};
 
-void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]);
+//prototypes
 
 int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y, int input);
+
+//serverside
+
+void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]);
 int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned_step_y);
+//to implement for server
+//update_player
+
+
+//clientside
+
+void init_shot();
+void move_player();
+//to implement for client
+//draw_objects
+//draw player
 
 int main(int argc, char *argv[]) {
   int x = 0, y = 0;
