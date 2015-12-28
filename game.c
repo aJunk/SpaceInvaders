@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #define DELAY 30000
 
@@ -41,12 +42,20 @@ Shot shots[AMUNITION] = { {{0, 0}, 0} };
 
 int tmp_obstacle[2] = {3,5};
 
-//prototypes
+//server-variables
+Player s_player = {{0,0}, 0, 5, 1};
+Object s_obj[MX * MY] = {{{0,0}, 0, 0, NULL}};
 
+//client-variables
+Player c_player = {{0,0}, 0, 5, 1};
+Object c_obj[MX * MY] = {{{0,0}, 0, 0, NULL}};
+
+
+
+//prototypes
 int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y, int input);
 
 //serverside
-
 void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]);
 int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned_step_y);
 //to implement for server
@@ -54,7 +63,6 @@ int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned
 
 
 //clientside
-
 void init_shot();
 void move_player();
 //to implement for client
@@ -70,26 +78,21 @@ int main(int argc, char *argv[]) {
   int direction_y = 1;
   int ch;
 
+  //serverside-init -> start
+
   time_t t;
-  char sym[] = {'_','_','_','|','X','|','-','-','-'};
-
-  Art art_1 = {3, 3,sym};
-
-  Player player = {{0,0}, 0, 5, 5};
-  Object obj[MX * MY] = {{{0,0}, 0, 0, &art_1}};
-
   //for(int i = 0; i < MX * MY; i++) obj[i].life = 0;
-
   srand((unsigned) time(&t));
 
   for(int i = 0; i < 10; i++){
-    obj[i].pos[0] = rand() % MX;
-    obj[i].pos[1] = rand() % MY;
+    s_obj[i].pos[0] = rand() % MX;
+    s_obj[i].pos[1] = rand() % MY;
 
-    obj[i].life = rand() % 4;
+    s_obj[i].life = rand() % 4;
   }
+  //serverside-init <- end
 
-
+  //clientside-init -> start
   initscr();
   noecho();
   cbreak();
@@ -97,19 +100,35 @@ int main(int argc, char *argv[]) {
   curs_set(FALSE);
   int toggle = 1;
   timeout(0);
+  resizeterm(MY+2, MX+2);
+  getmaxyx(stdscr, max_y, max_x);
+  clear();
+  //TODO: Update all moving objects and detect collisions
+
+  refresh();
+  wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
   // Global var `stdscr` is created by the call to `initscr()`
+
+//clientside-init <- end
 
   while(1) {
 
-    //manage window
-    resizeterm(MY+2, MX+2);
-    getmaxyx(stdscr, max_y, max_x);
+    memcpy(c_obj, s_obj, MX * MY * sizeof(Object));
+    memcpy(&c_player, &s_player, sizeof(Player));
+
+//clientside -> start
+
+    //TODO: Update all moving objects and detect collisions
+
+    //redraw screen
+    refresh();
     clear();
     wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvprintw(player.pos[1] + 1, player.pos[0] + 1, "o");
+    //draw player
+    mvprintw(c_player.pos[1] + 1, c_player.pos[0] + 1, "o");
 
-
-    for(int i = 0; i < MX * MY; i++)if(obj[i].life > 0)mvprintw(obj[i].pos[1] + 1, obj[i].pos[0] + 1, "X");
+    //draw all objects - TODO: change object structure to chained Lists for saving memory or make distribution of free space smarter
+    for(int i = 0; i < MX * MY; i++)if(c_obj[i].life > 0)mvprintw(c_obj[i].pos[1] + 1, c_obj[i].pos[0] + 1, "X");
 
     //simple frame-change indicator
     if(toggle){
@@ -119,14 +138,6 @@ int main(int argc, char *argv[]) {
       mvprintw(0, 0, "-");
       toggle = 1;
     }
-
-    //update shots
-    shoot(shots, NULL, obj);
-
-    //TODO: Update all moving objects and detect collisions
-
-    refresh();
-
     //Delay to reduce cpu-load
     //TODO: time accurately to a certain number of fps
     usleep(DELAY);
@@ -134,11 +145,22 @@ int main(int argc, char *argv[]) {
     //read user-input
     ch = wgetch(stdscr);
 
-    update_player(&player, obj, max_x, max_y, ch);
 
-    //nitiate shot
-    if(ch == 's')shoot(shots, player.pos, obj);
+//clientside <- end
 
+    memcpy(s_obj, c_obj, MX * MY * sizeof(Object));
+    memcpy(&s_player, &c_player, sizeof(Player));
+
+//serverside -> start
+
+    //initiate shot
+    if(ch == 's')shoot(shots, s_player.pos, s_obj);
+    update_player(&s_player, s_obj, max_x, max_y, ch);
+
+    //update shots
+    shoot(shots, NULL, s_obj);
+
+//serverside <- end
 
 
 
