@@ -12,11 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#define BUF 1024
-#define PORT_MIN 1024
-#define PORT_MAX 65535
-#define STD_PORT 4657
-#define EXIT_ERROR 1
+#include "communication.h"
 
 int main(int argc, char **argv) {
 	int ret = 0;
