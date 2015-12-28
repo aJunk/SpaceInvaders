@@ -1,5 +1,3 @@
-//Das ist aber ein schöner server!
-
 /*Socket Server
  gcc -o server -std=c99 -Wall -Wextra -pedantic -Wno-unused-parameter socket_server.c
  Nachempfunden:
