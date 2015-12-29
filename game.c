@@ -63,6 +63,8 @@ int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned
 //clientside
 void init_shot();
 void move_player();
+void draw_obj(Object obj[MX * MY]);
+void draw_player(Player *_player);
 //to implement for client
 //draw_objects
 //draw player
@@ -76,7 +78,7 @@ int main(int argc, char *argv[]) {
   int direction_y = 1;
   int ch;
 
-  //serverside-init -> start
+//serverside-init -> start
 
   time_t t;
   //for(int i = 0; i < MX * MY; i++) obj[i].life = 0;
@@ -88,9 +90,9 @@ int main(int argc, char *argv[]) {
 
     s_obj[i].life = rand() % 4;
   }
-  //serverside-init <- end
+//serverside-init <- end
 
-  //clientside-init -> start
+//clientside-init -> start
   initscr();
   noecho();
   cbreak();
@@ -107,6 +109,11 @@ int main(int argc, char *argv[]) {
   wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
   // Global var `stdscr` is created by the call to `initscr()`
 
+  //init colors
+  start_color();			/* Start color 			*/
+	init_pair(1, COLOR_RED, COLOR_BLACK);
+  init_pair(2, COLOR_GREEN, COLOR_BLACK);
+  attron(COLOR_PAIR(2));
 //clientside-init <- end
 
   while(1) {
@@ -126,7 +133,7 @@ int main(int argc, char *argv[]) {
     mvprintw(c_player.pos[1] + 1, c_player.pos[0] + 1, "o");
 
     //draw all objects - TODO: change object structure to chained Lists for saving memory or make distribution of free space smarter
-    for(int i = 0; i < MX * MY; i++)if(c_obj[i].life > 0)mvprintw(c_obj[i].pos[1] + 1, c_obj[i].pos[0] + 1, "X");
+    draw_obj(c_obj);
 
     //simple frame-change indicator
     if(toggle){
@@ -166,6 +173,21 @@ int main(int argc, char *argv[]) {
 
   endwin();
 }
+
+
+void draw_obj(Object obj[MX * MY]){
+  attron(COLOR_PAIR(1));
+
+  for(int i = 0; i < MX * MY; i++)if(c_obj[i].life > 0)mvprintw(c_obj[i].pos[1] + 1, c_obj[i].pos[0] + 1, "X");
+
+  attron(COLOR_PAIR(2));
+}
+
+void draw_player(Player *_player){
+
+
+}
+
 
 int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned_step_y){
   if(!(pos1[0] + planned_step_x == pos2[0] && pos1[1] + planned_step_y == pos2[1])) return 0;
