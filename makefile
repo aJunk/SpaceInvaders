@@ -1,4 +1,4 @@
-CFLAGS=-g -ansi -Wall -Wextra -Wfatal-errors -pedantic -pedantic-errors -m64 -std=c99
+CFLAGS=-g -ansi -Wall -Wextra -Wfatal-errors -pedantic -pedantic-errors -m64 -std=gnu99 -D_XOPEN_SOURCE
 INCLUDEFLAGES= -lncurses
 PNAME=invaders
 FETCHMEM=curl -L -O https://bintray.com/artifact/download/bruening/DrMemory/DrMemory-MacOS-1.8.1-0.tar.gz --progress-bar
