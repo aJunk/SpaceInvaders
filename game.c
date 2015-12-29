@@ -1,5 +1,7 @@
-#include <ncurses.h>
+#define _XOPEN_SOURCE
 #include <unistd.h>
+
+#include <ncurses.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
