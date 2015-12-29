@@ -9,8 +9,8 @@ DYNLIBFILENAME=
 LINE=\n-----------------------------------------------\n
 
 all: clean havedirs
-	gcc -c *.c -I./include $(INCLUDEFLAGES)
-	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(INCLUDEFLAGES)
+	gcc -c *.c -I./include $(CFLAGS) $(INCLUDEFLAGES)
+	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
 
 clean:
 	rm -rf *o $(PNAME) $(PNAME).*
