@@ -1,0 +1,15 @@
+server to client protocol
++--------+-----------------------+-------------------------+-------------------------+
+| Player | num. of objects added | num. of objects changed | num. of objects deleted |
++--------+-----------------------+-------------------------+-------------------------+
+
+client to server protocol
++------+---------+
+| tick | bitmask |
++------+---------+
+
+  tick (byte)
+    synch-message (will be some sort of timeframe number...random for now)
+    
+  move bitmask (byte)
+    up | down | left | right | init_shot | <rest empty for now>

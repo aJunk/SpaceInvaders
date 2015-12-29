@@ -4,6 +4,9 @@
 #include <time.h>
 #include <string.h>
 
+#define bkg_colour 2
+#define obj_colour 1
+#define player_colour 3
 #define DELAY 30000
 
 #define MX 50
@@ -21,7 +24,7 @@ typedef struct {
   int pos[2];
   int type;
   int life;
-  Art* art;
+  //Art* art;
 }Object;
 
 typedef struct {
@@ -42,13 +45,17 @@ int tmp_obstacle[2] = {3,5};
 
 //server-variables
 Player s_player = {{0,0}, 0, 5, 1};
-Object s_obj[MX * MY] = {{{0,0}, 0, 0, NULL}};
+Object s_obj[MX * MY] = {{{0,0}, 0, 0}};
+char *server_data_exchange_container = NULL;
+char *server_rec_buf = 0;
 
 //client-variables
 Player c_player = {{0,0}, 0, 5, 1};
-Object c_obj[MX * MY] = {{{0,0}, 0, 0, NULL}};
+Object c_obj[MX * MY] = {{{0,0}, 0, 0}};
+char *client_data_exchange_container = NULL;
+char client_send_buf = 0;
 
-
+void frame_change();
 
 //prototypes
 int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y, int input);
@@ -69,6 +76,8 @@ void draw_player(Player *_player);
 //draw_objects
 //draw player
 
+//START OF PROGRAMM-----------------------------------------------------------
+
 int main(int argc, char *argv[]) {
   int x = 0, y = 0;
   int max_y = 0, max_x = 0;
@@ -79,6 +88,8 @@ int main(int argc, char *argv[]) {
   int ch;
 
 //serverside-init -> start
+  //add attributes
+  server_data_exchange_container = malloc(sizeof(Object) * MX * MY + sizeof(Player));
 
   time_t t;
   //for(int i = 0; i < MX * MY; i++) obj[i].life = 0;
@@ -98,7 +109,6 @@ int main(int argc, char *argv[]) {
   cbreak();
   keypad(stdscr, TRUE);
   curs_set(FALSE);
-  int toggle = 1;
   timeout(0);
   resizeterm(MY+2, MX+2);
   getmaxyx(stdscr, max_y, max_x);
@@ -111,10 +121,14 @@ int main(int argc, char *argv[]) {
 
   //init colors
   start_color();			/* Start color 			*/
-	init_pair(1, COLOR_RED, COLOR_BLACK);
-  init_pair(2, COLOR_GREEN, COLOR_BLACK);
-  attron(COLOR_PAIR(2));
+	init_pair(obj_colour, COLOR_RED, COLOR_BLACK);
+  init_pair(bkg_colour, COLOR_GREEN, COLOR_BLACK);
+  init_pair(player_colour, COLOR_YELLOW, COLOR_BLACK);
+
+  attron(COLOR_PAIR(bkg_colour));
 //clientside-init <- end
+
+//BEGIN MAIN LOOP-------------------------------------------------------------
 
   while(1) {
 
@@ -129,22 +143,18 @@ int main(int argc, char *argv[]) {
     refresh();
     clear();
     wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
+
     //draw player
-    mvprintw(c_player.pos[1] + 1, c_player.pos[0] + 1, "o");
+    draw_player(&c_player);
 
     //draw all objects - TODO: change object structure to chained Lists for saving memory or make distribution of free space smarter
     draw_obj(c_obj);
 
     //simple frame-change indicator
-    if(toggle){
-      mvprintw(0, 0, "+");
-      toggle = 0;
-    }else{
-      mvprintw(0, 0, "-");
-      toggle = 1;
-    }
+    frame_change();
+
     //Delay to reduce cpu-load
-    //TODO: time accurately to a certain number of fps
+    //TODO: time accurately to a certain number of updates per second
     usleep(DELAY);
 
     //read user-input
@@ -174,18 +184,22 @@ int main(int argc, char *argv[]) {
   endwin();
 }
 
+//END OF PROGRAMM--------------------------------------------------------------
 
-void draw_obj(Object obj[MX * MY]){
-  attron(COLOR_PAIR(1));
+void draw_obj(Object _obj[MX * MY]){
+  attron(COLOR_PAIR(obj_colour));
 
-  for(int i = 0; i < MX * MY; i++)if(c_obj[i].life > 0)mvprintw(c_obj[i].pos[1] + 1, c_obj[i].pos[0] + 1, "X");
+  for(int i = 0; i < MX * MY; i++)if(_obj[i].life > 0)mvprintw(_obj[i].pos[1] + 1, _obj[i].pos[0] + 1, "X");
 
-  attron(COLOR_PAIR(2));
+  attron(COLOR_PAIR(bkg_colour));
 }
 
 void draw_player(Player *_player){
+  attron(COLOR_PAIR(player_colour));
 
+  mvprintw(_player->pos[1] + 1, _player->pos[0] + 1, "o");
 
+  attron(COLOR_PAIR(bkg_colour));
 }
 
 
@@ -244,4 +258,16 @@ void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]){
     }
   }
 
+}
+
+void frame_change(){
+  static char toggle = 0;
+
+  if(toggle){
+    mvprintw(0, 0, "+");
+    toggle = 0;
+  }else{
+    mvprintw(0, 0, "-");
+    toggle = 1;
+  }
 }
