@@ -184,9 +184,10 @@ int main(int argc, char *argv[]) {
 
 //serverside -> start
 
-    //initiate shot
+    //initiate shot & update player
     if(s_player.instructions & INIT_SHOT)shoot(shots, s_player.pos, s_obj);
     update_player(&s_player, s_obj, max_x, max_y);
+
 
     //update shots
     shoot(shots, NULL, s_obj);
