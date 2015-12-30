@@ -39,6 +39,7 @@
 //size of data eschange containers (needs to be known at pre-compilation-time)
 #define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3
 
+
 typedef struct {
   char width;
   char height;
