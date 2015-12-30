@@ -10,7 +10,9 @@
 #define bkg_colour 2
 #define obj_colour 1
 #define player_colour 3
-#define DELAY 30000
+
+
+#define DELAY 20000
 
 //BITMASK for Player
 #define UP 128
@@ -18,6 +20,7 @@
 #define LEFT 32
 #define RIGHT 16
 #define INIT_SHOT 8
+//TODO: mask for request_pause/request_resume (same bit?), restart, quit game
 
 //Package handling flags
 #define ASSEMBLE 1
@@ -83,15 +86,10 @@ void frame_change();
 //global functions
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
 
-
-//prototypes
-int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y);
-
 //serverside
 void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]);
 int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned_step_y);
-//to implement for server
-//update_player
+int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y);
 
 
 //clientside
@@ -100,9 +98,7 @@ void move_player(Player *_player, int input);
 void draw_obj(Object obj[MX * MY]);
 void draw_player(Player *_player);
 void draw_shot(Shot _shots[AMUNITION]);
-//to implement for client
-//draw_objects
-//draw player
+
 
 //START OF PROGRAMM-----------------------------------------------------------
 
@@ -113,6 +109,8 @@ int main(int argc, char *argv[]) {
   int next_y = 0;
   int direction = 1;
   int direction_y = 1;
+
+
   int ch;
 
 //serverside-init -> start
@@ -145,7 +143,6 @@ int main(int argc, char *argv[]) {
   resizeterm(MY+2, MX+2);
   getmaxyx(stdscr, max_y, max_x);
   clear();
-  //TODO: Update all moving objects and detect collisions
 
   refresh();
   wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
@@ -164,29 +161,25 @@ int main(int argc, char *argv[]) {
 
   while(1) {
 
+
 //clientside -> start
+    resizeterm(MY+2, MX+2);
+
 
     //DECODE TRANSMITTED PACKAGE
-
     handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
-
     //DECODE END!
-
-
-
-
-    //TODO: Update all moving objects and detect collisions
 
     c_player.instructions = 0;
     //redraw screen
-    refresh();
+
     clear();
     wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 
     //draw player
     draw_player(&c_player);
 
-    //draw all objects - TODO: change object structure to chained Lists for saving memory or make distribution of free space smarter
+    //draw all objects
     draw_obj(c_obj);
 
     //draw shots
@@ -194,6 +187,8 @@ int main(int argc, char *argv[]) {
 
     //simple frame-change indicator
     frame_change();
+
+    refresh();
 
     //Delay to reduce cpu-load
     //TODO: time accurately to a certain number of updates per second
@@ -208,11 +203,9 @@ int main(int argc, char *argv[]) {
 
     if(ch == 'q')break;
 
-
-
 //clientside <- end
 
-    //memcpy(s_obj, c_obj, MX * MY * sizeof(Object));
+
     memcpy(&(s_player.instructions), &(c_player.instructions), sizeof(c_player.instructions));
 
 
@@ -222,10 +215,8 @@ int main(int argc, char *argv[]) {
     if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
     update_player(&s_player, s_obj, max_x, max_y);
 
-
     //update shots
     shoot(s_shots, NULL, s_obj);
-
 
     //ENCODE NETWORK PACKAGE
     handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
@@ -271,7 +262,7 @@ void move_player(Player *_player, int input){
 
 void init_shot(Player *_player, int input){
   switch (input){
-    case 's':
+    case ' ':
       _player->instructions |= INIT_SHOT;
       break;
     default:
@@ -320,13 +311,9 @@ int update_player(Player *_player,Object obj[MX * MY], int max_x, int max_y){
   //update player position
   if ((_player->pos[0] < (max_x - 3))&&(_player->instructions & RIGHT)) {
     if(!test_for_collision_with_object(_player->pos, obj, 1, 0)) _player->pos[0]++;
-
-
   } else if ((_player->pos[0]  > 0)&&(_player->instructions & LEFT)) {
     if(!test_for_collision_with_object(_player->pos, obj, -1, 0)) _player->pos[0]--;
-  }
-
-  if ((_player->pos[1] < (max_y - 3))&&(_player->instructions & DOWN)) {
+  } else if ((_player->pos[1] < (max_y - 3))&&(_player->instructions & DOWN)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, 1)) _player->pos[1]++;
   } else if((_player->pos[1]  > 0)&&(_player->instructions & UP)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, -1)) _player->pos[1]--;
@@ -373,12 +360,13 @@ void frame_change(){
 
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
   if(mode == ASSEMBLE){
+
     memset(container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
     char *tmp = container;
     memcpy(tmp, &s_player, sizeof(Player));
     tmp += sizeof(Player);
     memcpy(tmp, shots, sizeof(Shot) * AMUNITION);
-    tmp+= sizeof(Shot) * AMUNITION;
+    tmp += sizeof(Shot) * AMUNITION;
     int tmp_int = 0;
     for(int i = 0; i < MX * MY; i++){
       if(s_obj[i].status & UPDATED){
@@ -390,7 +378,9 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
     }
     memcpy(tmp, &tmp_int, sizeof(int));
     tmp = NULL;
+
   }else if(mode == DISASSEMBLE){
+
     char *c_tmp = client_data_exchange_container;
     memcpy(&c_player, c_tmp, sizeof(Player));
     c_tmp += sizeof(Player);
@@ -407,6 +397,7 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
         memcpy(&(obj[index]), c_tmp + sizeof(int) + sizeof(Object) * i + sizeof(int) * (i + 1), sizeof(Object));
       }
     }
+
   }
 
 }
