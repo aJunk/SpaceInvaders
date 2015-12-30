@@ -1,7 +1,7 @@
 server to client protocol
-+--------+------+-----------------+-------------------------+-------------------------+-------+--------+----->
-| Player | Shot | num. of objects added | num. of objects changed | num. of objects deleted | Index | Object | ....
-+--------+------+-----------------+-------------------------+-------------------------+-------+--------+----->
++--------+------+--------------------------+--------+--------+------>
+| Player | Shot |  num. of objects changed |  Index | Object | ....
++--------+------+--------------------------+--------+--------+------>
 
   Player (struct Player)
     sends fully populated player-struct to client

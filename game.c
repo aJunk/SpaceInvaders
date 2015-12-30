@@ -18,11 +18,14 @@
 #define INIT_SHOT 8
 
 #define UPDATED 128
+#define NO_CHANGE 0
 
 #define MX 50
 #define MY 10
 
 #define AMUNITION 1
+
+#define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3
 
 typedef struct {
   char width;
@@ -104,7 +107,7 @@ int main(int argc, char *argv[]) {
 
 //serverside-init -> start
   //add attributes
-  server_data_exchange_container = malloc(sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3);
+  server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
   time_t t;
   //for(int i = 0; i < MX * MY; i++) obj[i].life = 0;
@@ -115,11 +118,13 @@ int main(int argc, char *argv[]) {
     s_obj[i].pos[1] = rand() % MY;
 
     s_obj[i].life = rand() % 4;
+    s_obj[i].status = UPDATED;
   }
 //serverside-init <- end
 
 //clientside-init -> start
-  client_data_exchange_container = malloc(sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3);
+  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+  memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
   initscr();
   noecho();
@@ -148,11 +153,32 @@ int main(int argc, char *argv[]) {
 //BEGIN MAIN LOOP-------------------------------------------------------------
 
   while(1) {
-    memcpy(&c_player, &s_player, sizeof(Player));
-    memcpy(c_shots, s_shots, sizeof(Shot) * AMUNITION);
-    memcpy(c_obj, s_obj, MX * MY * sizeof(Object));
 
 //clientside -> start
+
+    //DECODE TRANSMITTED PACKAGE
+
+    char *c_tmp = client_data_exchange_container;
+    memcpy(&c_player, c_tmp, sizeof(Player));
+    c_tmp += sizeof(Player);
+    memcpy(c_shots, c_tmp, sizeof(Shot) * AMUNITION);
+    c_tmp += sizeof(Shot) * AMUNITION;
+    int index = 0;
+    int count = 0;
+
+    memcpy(&count, c_tmp, sizeof(int));
+
+    if(count > 0){
+      for(int i = 0; i < count; i++){
+        memcpy(&index, c_tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * i, sizeof(int));
+        memcpy(&(c_obj[index]), c_tmp + sizeof(int) + sizeof(Object) * i + sizeof(int) * (i + 1), sizeof(Object));
+      }
+    }
+
+    //DECODE END!
+
+
+
 
     //TODO: Update all moving objects and detect collisions
 
@@ -204,6 +230,31 @@ int main(int argc, char *argv[]) {
 
     //update shots
     shoot(s_shots, NULL, s_obj);
+
+
+    //ENCODE NETWORK PACKAGE
+    memset(server_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+    char *tmp = server_data_exchange_container;
+    memcpy(tmp, &s_player, sizeof(Player));
+    tmp += sizeof(Player);
+    memcpy(tmp, s_shots, sizeof(Shot) * AMUNITION);
+    tmp+= sizeof(Shot) * AMUNITION;
+    int tmp_int = 0;
+    for(int i = 0; i < MX * MY; i++){
+      if(s_obj[i].status & UPDATED){
+        memcpy(tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * tmp_int, &i, sizeof(int));
+        memcpy(tmp + sizeof(int) + sizeof(Object) * tmp_int + sizeof(int) * (tmp_int + 1), &(s_obj[i]), sizeof(Object));
+        tmp_int++;
+        s_obj[i].status = NO_CHANGE;
+      }
+    }
+    memcpy(tmp, &tmp_int, sizeof(int));
+    tmp = NULL;
+
+    //ENCODE END!
+
+    //TRANSMIT TCP PACKAGE
+    memcpy(client_data_exchange_container, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
 //serverside <- end
 
