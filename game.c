@@ -6,25 +6,34 @@
 #include <time.h>
 #include <string.h>
 
+//ncurses color functions
 #define bkg_colour 2
 #define obj_colour 1
 #define player_colour 3
 #define DELAY 30000
 
+//BITMASK for Player
 #define UP 128
 #define DOWN 64
 #define LEFT 32
 #define RIGHT 16
 #define INIT_SHOT 8
 
+//Package handling flags
+#define ASSEMBLE 1
+#define DISASSEMBLE 0
+
 #define UPDATED 128
 #define NO_CHANGE 0
 
+//FIELD width & height
 #define MX 50
 #define MY 10
 
+//size of amunition array
 #define AMUNITION 1
 
+//size of data eschange containers (needs to be known at pre-compilation-time)
 #define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3
 
 typedef struct {
@@ -55,9 +64,6 @@ typedef struct{
 }Shot;
 
 
-
-int tmp_obstacle[2] = {3,5};
-
 //server-variables
 Player s_player = {{0,0}, 0, 5, 1, 0};
 Object s_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
@@ -73,6 +79,10 @@ char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 
 void frame_change();
+
+//global functions
+void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
+
 
 //prototypes
 int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y);
@@ -158,22 +168,7 @@ int main(int argc, char *argv[]) {
 
     //DECODE TRANSMITTED PACKAGE
 
-    char *c_tmp = client_data_exchange_container;
-    memcpy(&c_player, c_tmp, sizeof(Player));
-    c_tmp += sizeof(Player);
-    memcpy(c_shots, c_tmp, sizeof(Shot) * AMUNITION);
-    c_tmp += sizeof(Shot) * AMUNITION;
-    int index = 0;
-    int count = 0;
-
-    memcpy(&count, c_tmp, sizeof(int));
-
-    if(count > 0){
-      for(int i = 0; i < count; i++){
-        memcpy(&index, c_tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * i, sizeof(int));
-        memcpy(&(c_obj[index]), c_tmp + sizeof(int) + sizeof(Object) * i + sizeof(int) * (i + 1), sizeof(Object));
-      }
-    }
+    handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
 
     //DECODE END!
 
@@ -233,24 +228,7 @@ int main(int argc, char *argv[]) {
 
 
     //ENCODE NETWORK PACKAGE
-    memset(server_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-    char *tmp = server_data_exchange_container;
-    memcpy(tmp, &s_player, sizeof(Player));
-    tmp += sizeof(Player);
-    memcpy(tmp, s_shots, sizeof(Shot) * AMUNITION);
-    tmp+= sizeof(Shot) * AMUNITION;
-    int tmp_int = 0;
-    for(int i = 0; i < MX * MY; i++){
-      if(s_obj[i].status & UPDATED){
-        memcpy(tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * tmp_int, &i, sizeof(int));
-        memcpy(tmp + sizeof(int) + sizeof(Object) * tmp_int + sizeof(int) * (tmp_int + 1), &(s_obj[i]), sizeof(Object));
-        tmp_int++;
-        s_obj[i].status = NO_CHANGE;
-      }
-    }
-    memcpy(tmp, &tmp_int, sizeof(int));
-    tmp = NULL;
-
+    handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
     //ENCODE END!
 
     //TRANSMIT TCP PACKAGE
@@ -391,4 +369,44 @@ void frame_change(){
     mvprintw(0, 0, "-");
     toggle = 1;
   }
+}
+
+void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
+  if(mode == ASSEMBLE){
+    memset(container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+    char *tmp = container;
+    memcpy(tmp, &s_player, sizeof(Player));
+    tmp += sizeof(Player);
+    memcpy(tmp, shots, sizeof(Shot) * AMUNITION);
+    tmp+= sizeof(Shot) * AMUNITION;
+    int tmp_int = 0;
+    for(int i = 0; i < MX * MY; i++){
+      if(s_obj[i].status & UPDATED){
+        memcpy(tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * tmp_int, &i, sizeof(int));
+        memcpy(tmp + sizeof(int) + sizeof(Object) * tmp_int + sizeof(int) * (tmp_int + 1), &(obj[i]), sizeof(Object));
+        tmp_int++;
+        s_obj[i].status = NO_CHANGE;
+      }
+    }
+    memcpy(tmp, &tmp_int, sizeof(int));
+    tmp = NULL;
+  }else if(mode == DISASSEMBLE){
+    char *c_tmp = client_data_exchange_container;
+    memcpy(&c_player, c_tmp, sizeof(Player));
+    c_tmp += sizeof(Player);
+    memcpy(shots, c_tmp, sizeof(Shot) * AMUNITION);
+    c_tmp += sizeof(Shot) * AMUNITION;
+    int index = 0;
+    int count = 0;
+
+    memcpy(&count, c_tmp, sizeof(int));
+
+    if(count > 0){
+      for(int i = 0; i < count; i++){
+        memcpy(&index, c_tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * i, sizeof(int));
+        memcpy(&(obj[index]), c_tmp + sizeof(int) + sizeof(Object) * i + sizeof(int) * (i + 1), sizeof(Object));
+      }
+    }
+  }
+
 }
