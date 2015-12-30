@@ -17,6 +17,8 @@
 #define RIGHT 16
 #define INIT_SHOT 8
 
+#define UPDATED 128
+
 #define MX 50
 #define MY 10
 
@@ -33,6 +35,7 @@ typedef struct {
   int type;
   int life;
   //Art* art;
+  char status;
 }Object;
 
 typedef struct {
@@ -48,21 +51,23 @@ typedef struct{
   int active;
 }Shot;
 
-Shot shots[AMUNITION] = { {{0, 0}, 0} };
+
 
 int tmp_obstacle[2] = {3,5};
 
 //server-variables
 Player s_player = {{0,0}, 0, 5, 1, 0};
-Object s_obj[MX * MY] = {{{0,0}, 0, 0}};
+Object s_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *server_data_exchange_container = NULL;
 char *server_rec_buf = 0;
+Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
 
 //client-variables
 Player c_player = {{0,0}, 0, 5, 1, 0};
-Object c_obj[MX * MY] = {{{0,0}, 0, 0}};
+Object c_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
+Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 
 void frame_change();
 
@@ -81,6 +86,7 @@ void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
 void draw_obj(Object obj[MX * MY]);
 void draw_player(Player *_player);
+void draw_shot(Shot _shots[AMUNITION]);
 //to implement for client
 //draw_objects
 //draw player
@@ -98,7 +104,7 @@ int main(int argc, char *argv[]) {
 
 //serverside-init -> start
   //add attributes
-  server_data_exchange_container = malloc(sizeof(Object) * MX * MY + sizeof(Player));
+  server_data_exchange_container = malloc(sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3);
 
   time_t t;
   //for(int i = 0; i < MX * MY; i++) obj[i].life = 0;
@@ -113,6 +119,8 @@ int main(int argc, char *argv[]) {
 //serverside-init <- end
 
 //clientside-init -> start
+  client_data_exchange_container = malloc(sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3);
+
   initscr();
   noecho();
   cbreak();
@@ -140,16 +148,15 @@ int main(int argc, char *argv[]) {
 //BEGIN MAIN LOOP-------------------------------------------------------------
 
   while(1) {
-
-    memcpy(c_obj, s_obj, MX * MY * sizeof(Object));
     memcpy(&c_player, &s_player, sizeof(Player));
+    memcpy(c_shots, s_shots, sizeof(Shot) * AMUNITION);
+    memcpy(c_obj, s_obj, MX * MY * sizeof(Object));
 
 //clientside -> start
 
     //TODO: Update all moving objects and detect collisions
 
     c_player.instructions = 0;
-
     //redraw screen
     refresh();
     clear();
@@ -160,6 +167,9 @@ int main(int argc, char *argv[]) {
 
     //draw all objects - TODO: change object structure to chained Lists for saving memory or make distribution of free space smarter
     draw_obj(c_obj);
+
+    //draw shots
+    draw_shot(c_shots);
 
     //simple frame-change indicator
     frame_change();
@@ -175,28 +185,35 @@ int main(int argc, char *argv[]) {
 
     init_shot(&c_player, ch);
 
+    if(ch == 'q')break;
+
 
 
 //clientside <- end
 
-    memcpy(s_obj, c_obj, MX * MY * sizeof(Object));
-    memcpy(&s_player, &c_player, sizeof(Player));
+    //memcpy(s_obj, c_obj, MX * MY * sizeof(Object));
+    memcpy(&(s_player.instructions), &(c_player.instructions), sizeof(c_player.instructions));
+
 
 //serverside -> start
 
     //initiate shot & update player
-    if(s_player.instructions & INIT_SHOT)shoot(shots, s_player.pos, s_obj);
+    if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
     update_player(&s_player, s_obj, max_x, max_y);
 
 
     //update shots
-    shoot(shots, NULL, s_obj);
+    shoot(s_shots, NULL, s_obj);
 
 //serverside <- end
 
 
 
   }
+
+  beep();
+  free(server_data_exchange_container);
+  free(client_data_exchange_container);
 
   endwin();
 }
@@ -249,6 +266,9 @@ void draw_player(Player *_player){
   attron(COLOR_PAIR(bkg_colour));
 }
 
+void draw_shot(Shot _shots[AMUNITION]){
+  if(_shots[0].active)mvprintw(_shots[0].pos[1], _shots[0].pos[0] + 1, "|");
+}
 
 int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned_step_y){
   if(!(pos1[0] + planned_step_x == pos2[0] && pos1[1] + planned_step_y == pos2[1])) return 0;
@@ -297,10 +317,13 @@ void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]){
       _shots[i].pos[1] -= 1;
 
       if((_shots[i].pos[1] < 1)||test_for_collision_with_object(_shots[i].pos, obj, 0, 0)){
-          for(int o = 0; o < MX * MY; o++)if((obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1])) obj[o].life--;
+          for(int o = 0; o < MX * MY; o++)if((obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1])){
+            obj[o].life--;
+            obj[o].status = UPDATED;
+          }
         _shots[i].active = 0;
       }else{
-        mvprintw(_shots[i].pos[1], _shots[i].pos[0] + 1, "|");
+        //mvprintw(_shots[i].pos[1], _shots[i].pos[0] + 1, "|");
       }
     }
   }

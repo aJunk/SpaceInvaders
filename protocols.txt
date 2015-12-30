@@ -1,15 +1,31 @@
 server to client protocol
-+--------+-----------------------+-------------------------+-------------------------+
-| Player | num. of objects added | num. of objects changed | num. of objects deleted |
-+--------+-----------------------+-------------------------+-------------------------+
++--------+------+-----------------+-------------------------+-------------------------+-------+--------+----->
+| Player | Shot | num. of objects added | num. of objects changed | num. of objects deleted | Index | Object | ....
++--------+------+-----------------+-------------------------+-------------------------+-------+--------+----->
+
+  Player (struct Player)
+    sends fully populated player-struct to client
+
+  Shot (struct Shot)
+    the shot...
+
+  num. of objects XXX
+    count of respective objects
+
+  Index & Objects
+    all the objects in respective order and their index in the array
+
+
+
+
 
 client to server protocol
 +------+---------+
-| tick | bitmask |
+| tick | bitmask |  <- probably ommiting tick for now
 +------+---------+
 
   tick (byte)
     synch-message (will be some sort of timeframe number...random for now)
-    
+
   move bitmask (byte)
     up | down | left | right | init_shot | <rest empty for now>
