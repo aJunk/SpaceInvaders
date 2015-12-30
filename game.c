@@ -11,6 +11,12 @@
 #define player_colour 3
 #define DELAY 30000
 
+#define UP 128
+#define DOWN 64
+#define LEFT 32
+#define RIGHT 16
+#define INIT_SHOT 8
+
 #define MX 50
 #define MY 10
 
@@ -34,6 +40,7 @@ typedef struct {
   int modifier;
   int life;
   int amunition;
+  char instructions;
 }Player;
 
 typedef struct{
@@ -46,13 +53,13 @@ Shot shots[AMUNITION] = { {{0, 0}, 0} };
 int tmp_obstacle[2] = {3,5};
 
 //server-variables
-Player s_player = {{0,0}, 0, 5, 1};
+Player s_player = {{0,0}, 0, 5, 1, 0};
 Object s_obj[MX * MY] = {{{0,0}, 0, 0}};
 char *server_data_exchange_container = NULL;
 char *server_rec_buf = 0;
 
 //client-variables
-Player c_player = {{0,0}, 0, 5, 1};
+Player c_player = {{0,0}, 0, 5, 1, 0};
 Object c_obj[MX * MY] = {{{0,0}, 0, 0}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
@@ -60,7 +67,7 @@ char client_send_buf = 0;
 void frame_change();
 
 //prototypes
-int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y, int input);
+int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y);
 
 //serverside
 void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]);
@@ -70,8 +77,8 @@ int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned
 
 
 //clientside
-void init_shot();
-void move_player();
+void init_shot(Player *_player, int input);
+void move_player(Player *_player, int input);
 void draw_obj(Object obj[MX * MY]);
 void draw_player(Player *_player);
 //to implement for client
@@ -141,6 +148,8 @@ int main(int argc, char *argv[]) {
 
     //TODO: Update all moving objects and detect collisions
 
+    c_player.instructions = 0;
+
     //redraw screen
     refresh();
     clear();
@@ -162,6 +171,11 @@ int main(int argc, char *argv[]) {
     //read user-input
     ch = wgetch(stdscr);
 
+    move_player(&c_player, ch);
+
+    init_shot(&c_player, ch);
+
+
 
 //clientside <- end
 
@@ -171,8 +185,8 @@ int main(int argc, char *argv[]) {
 //serverside -> start
 
     //initiate shot
-    if(ch == 's')shoot(shots, s_player.pos, s_obj);
-    update_player(&s_player, s_obj, max_x, max_y, ch);
+    if(s_player.instructions & INIT_SHOT)shoot(shots, s_player.pos, s_obj);
+    update_player(&s_player, s_obj, max_x, max_y);
 
     //update shots
     shoot(shots, NULL, s_obj);
@@ -187,6 +201,36 @@ int main(int argc, char *argv[]) {
 }
 
 //END OF PROGRAMM--------------------------------------------------------------
+void move_player(Player *_player, int input){
+
+  switch (input){
+    case KEY_RIGHT:
+      _player->instructions |= RIGHT;
+      break;
+    case KEY_LEFT:
+      _player->instructions |= LEFT;
+      break;
+    case KEY_UP:
+      _player->instructions |= UP;
+      break;
+    case KEY_DOWN:
+      _player->instructions |= DOWN;
+      break;
+    default:
+      break;
+  }
+
+}
+
+void init_shot(Player *_player, int input){
+  switch (input){
+    case 's':
+      _player->instructions |= INIT_SHOT;
+      break;
+    default:
+      break;
+  }
+}
 
 void draw_obj(Object _obj[MX * MY]){
   attron(COLOR_PAIR(obj_colour));
@@ -221,20 +265,20 @@ int test_for_collision_with_object(int pos1[2], Object obj[MX * MY], int planned
   return collision;
 }
 
-int update_player(Player *_player,Object obj[MX * MY], int max_x, int max_y, int input){
+int update_player(Player *_player,Object obj[MX * MY], int max_x, int max_y){
 
   //update player position
-  if ((_player->pos[0] < (max_x - 3))&&(input == KEY_RIGHT)) {
+  if ((_player->pos[0] < (max_x - 3))&&(_player->instructions & RIGHT)) {
     if(!test_for_collision_with_object(_player->pos, obj, 1, 0)) _player->pos[0]++;
 
 
-  } else if ((_player->pos[0]  > 0)&&(input == KEY_LEFT)) {
+  } else if ((_player->pos[0]  > 0)&&(_player->instructions & LEFT)) {
     if(!test_for_collision_with_object(_player->pos, obj, -1, 0)) _player->pos[0]--;
   }
 
-  if ((_player->pos[1] < (max_y - 3))&&(input==KEY_DOWN)) {
+  if ((_player->pos[1] < (max_y - 3))&&(_player->instructions & DOWN)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, 1)) _player->pos[1]++;
-  } else if((_player->pos[1]  > 0)&&(input==KEY_UP)) {
+  } else if((_player->pos[1]  > 0)&&(_player->instructions & UP)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, -1)) _player->pos[1]--;
   }
 
