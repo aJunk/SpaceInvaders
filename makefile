@@ -8,9 +8,10 @@ STATICLIBFILENAME=libs
 DYNLIBFILENAME=
 LINE=\n-----------------------------------------------\n
 
-all: clean havedirs
-	gcc -c *.c -I./include $(CFLAGS) $(INCLUDEFLAGES)
-	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
+all: clean havedirs game server
+#	gcc -c *.c -I./include $(CFLAGS) $(INCLUDEFLAGES)
+#	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
+	make client
 
 clean:
 	rm -rf *o $(PNAME) $(PNAME).*
@@ -47,8 +48,12 @@ gdebug: all
 getdrmem:
 	@test -d ../../drmemory || (echo "\033[31m$(LINE)DRMemory seems to be missing!\nFetching NOW!\033[0m";$(FETCHMEM);echo "\033[31m$ Extracting package\033[0m";tar -zxf DrMemory-MacOS-1.8.1-0.tar.gz ;echo "\033[34m$(LINE)Deleting image!\033[0m";echo "\033[34m$(LINE)Moving extracted Folder!\033[0m";mv DrMemory-MacOS-1.8.1-0 drmemory;mv drmemory ../../;echo "\033[34mDONE$(LINE)\033[0m")
 
-server:
-		gcc socket_server.c -o server -std=c99 -Wall -Wextra -pedantic -Wno-unused-parameter
+game:
+	gcc -c game.c -I./include $(CFLAGS) $(INCLUDEFLAGES)
+	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
 
-client:
-		gcc socket_client.c -o client -std=c99 -D_BSD_SOURCE -Wall -Wextra -pedantic -Wno-unused-parameter
+server:
+		gcc socket_server.c -o server -std=gnu99 -Wall -Wextra -pedantic -Wno-unused-parameter
+
+client: clean
+	gcc socket_client.c -o client -std=gnu99 -D_BSD_SOURCE -Wall -Wextra -pedantic -Wno-unused-parameter
