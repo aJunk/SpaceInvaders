@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 
 
 		resizeterm(MY+2, MX+2);
-		//clear();
+		clear();
 		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 		//draw player
 		draw_player(&s_player);
@@ -196,6 +196,9 @@ int main(int argc, char **argv) {
 		perror("Error disconnecting from client!");
 		return EXIT_ERROR;
 	}
+
+	endwin(stdscr);
+	
 	return 0;
  }
 }
