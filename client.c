@@ -133,6 +133,14 @@ int main(int argc, char **argv) {
 	//clientside -> start
 		resizeterm(MY+2, MX+2);
 
+		//GET TCP PACKAGE
+		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+			msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+			if(msgSize == 0)
+			{
+				perror("Error receiving, connection closed by client!");
+				return EXIT_ERROR;
+			}
 		//DECODE TRANSMITTED PACKAGE
 		handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
 		//DECODE END!
@@ -172,7 +180,7 @@ int main(int argc, char **argv) {
 
 	//TRANSMIT TCP PACKAGE
 		//c_player.instructions = 16;
-		ret = send(gamesocket, &(c_player.instructions), sizeof(c_player.instructions), 0);
+		ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 		if(ret < 0)
 		{
 			perror("Error sending!");
@@ -180,13 +188,6 @@ int main(int argc, char **argv) {
 		}
 		printf("%d\n", c_player.instructions);
 
-		//GET TCP PACKAGE
-			msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-			if(msgSize == 0)
-			{
-				perror("Error receiving, connection closed by client!");
-				return EXIT_ERROR;
-			}
 	//clientside <- end
 	}
 // GAME ENDS HERE --------------------------------------------------
@@ -274,7 +275,7 @@ void frame_change(){
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
 	if(mode == DISASSEMBLE){
     char *c_tmp = container;
-    memcpy(&c_player, c_tmp, sizeof(Player));
+    memcpy(player, c_tmp, sizeof(Player));
     c_tmp += sizeof(Player);
     memcpy(shots, c_tmp, sizeof(Shot) * AMUNITION);
     c_tmp += sizeof(Shot) * AMUNITION;
@@ -282,7 +283,6 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
     int count = 0;
 
     memcpy(&count, c_tmp, sizeof(int));
-
     if(count > 0){
       for(int i = 0; i < count; i++){
         memcpy(&index, c_tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * i, sizeof(int));

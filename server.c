@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	int ch;
 
 
-	screen_init();
+	//screen_init();
 
 // Check arguments
 	if(argc > 2)
@@ -135,6 +135,17 @@ int main(int argc, char **argv) {
 	while(1) {
 	//serverside -> start
 
+	handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
+	//ENCODE END!
+
+	//TRANSMIT TCP PACKAGE
+	ret = send(new_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+	if(ret < 0)
+	{
+		perror("Error sending!");
+		return EXIT_ERROR;
+	}
+
 	//GET TCP PACKAGE
 		msgSize = recv(new_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
 		if(msgSize == 0)
@@ -153,37 +164,27 @@ int main(int argc, char **argv) {
 
 
 
-		resizeterm(MY+2, MX+2);
+		//resizeterm(MY+2, MX+2);
 
-		clear();
-		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
+		//clear();
+		//wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 
 		//draw player
-		draw_player(&s_player);
+		//draw_player(&s_player);
 
 		//draw all objects
-		draw_obj(s_obj);
+		//draw_obj(s_obj);
 
 		//draw shots
-		draw_shot(s_shots);
+		//draw_shot(s_shots);
 
 		//simple frame-change indicator
-		frame_change();
+		//frame_change();
 
-		refresh();
+		//refresh();
 
 
 		//ENCODE NETWORK PACKAGE
-		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
-		//ENCODE END!
-
-	//TRANSMIT TCP PACKAGE
-		ret = send(new_gamesocket, server_data_exchange_container, sizeof(server_data_exchange_container), 0);
-		if(ret < 0)
-		{
-			perror("Error sending!");
-			return EXIT_ERROR;
-		}
 
 	//serverside <- end
 	}
@@ -274,6 +275,7 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
     int tmp_int = 0;
     for(int i = 0; i < MX * MY; i++){
       if(obj[i].status & UPDATED){
+				printf("updated\n");
         memcpy(tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * tmp_int, &i, sizeof(int));
         memcpy(tmp + sizeof(int) + sizeof(Object) * tmp_int + sizeof(int) * (tmp_int + 1), &(obj[i]), sizeof(Object));
         tmp_int++;
