@@ -11,7 +11,7 @@
 #define obj_colour 1
 #define player_colour 3
 
-#define DELAY 20000
+#define DELAY 25000
 
 //BITMASK for Player
 #define UP 128

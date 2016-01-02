@@ -57,14 +57,14 @@ int main(int argc, char **argv) {
 		}
 		else
 		{
-			printf("ERROR: Invalid argument! Usage: server -p <port>\n");
+			//printf("ERROR: Invalid argument! Usage: server -p <port>\n");
 			return EXIT_ERROR;
 		}
 	}
 
 	if(port <= PORT_MIN || port >= PORT_MAX)
 	{
-		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
+		//printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
 		return EXIT_ERROR;
 	}
 
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 		perror("Error creating socket!");
 		return EXIT_ERROR;
 	}
-	printf("Server Socket created.\n");
+	//printf("Server Socket created.\n");
 
 // Bind Socket to process
 	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 		perror("Error binding! Port not free.");
 		return EXIT_ERROR;
 	}
-	printf("Bind successfully.\n");
+	//printf("Bind successfully.\n");
 
 // Make listener (queue) for new connections
 	ret = listen(gamesocket, 5);		//max. 5 connections
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 		perror("Error making listener!");
 		return EXIT_ERROR;
 	}
-	printf("Listener initialized.\n");
+	//printf("Listener initialized.\n");
 
 	while(1)
 	{
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
 			perror("Error creating new socket!");
 			return EXIT_ERROR;
 		}
-		printf ("New Client connected: %s\n", inet_ntoa (address.sin_addr));
+		//printf ("New Client connected: %s\n", inet_ntoa (address.sin_addr));
 
 // GAME STARTS HERE ------------------------------------------------
 	//serverside-init -> start
@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
 			perror("Error receiving, connection closed by client!");
 			return EXIT_ERROR;
 		}
-		printf("%d\n", s_player.instructions);
+		//printf("%d\n", s_player.instructions);
 
 		//initiate shot & update player
 		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
@@ -275,7 +275,7 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
     int tmp_int = 0;
     for(int i = 0; i < MX * MY; i++){
       if(obj[i].status & UPDATED){
-				printf("updated\n");
+				//printf("updated\n");
         memcpy(tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * tmp_int, &i, sizeof(int));
         memcpy(tmp + sizeof(int) + sizeof(Object) * tmp_int + sizeof(int) * (tmp_int + 1), &(obj[i]), sizeof(Object));
         tmp_int++;
