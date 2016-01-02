@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	int ch;
 
 
-	//screen_init();
+	screen_init();
 
 // Check arguments
 	if(argc > 2)
@@ -164,24 +164,18 @@ int main(int argc, char **argv) {
 
 
 
-		//resizeterm(MY+2, MX+2);
-
+		resizeterm(MY+2, MX+2);
 		//clear();
-		//wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-
+		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 		//draw player
-		//draw_player(&s_player);
-
+		draw_player(&s_player);
 		//draw all objects
-		//draw_obj(s_obj);
-
+		draw_obj(s_obj);
 		//draw shots
-		//draw_shot(s_shots);
-
+		draw_shot(s_shots);
 		//simple frame-change indicator
-		//frame_change();
-
-		//refresh();
+		frame_change();
+		refresh();
 
 
 		//ENCODE NETWORK PACKAGE
