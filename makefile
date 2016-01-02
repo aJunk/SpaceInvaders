@@ -1,4 +1,4 @@
-CFLAGS=-g -ansi -Wall -Wextra -Wfatal-errors -pedantic -pedantic-errors -m64 -std=gnu99
+CFLAGS=-g -ansi -Wall -Wextra -Wfatal-errors -pedantic -pedantic-errors -std=gnu99
 INCLUDEFLAGES= -lncurses
 PNAME=invaders
 FETCHMEM=curl -L -O https://bintray.com/artifact/download/bruening/DrMemory/DrMemory-MacOS-1.8.1-0.tar.gz --progress-bar
@@ -52,8 +52,8 @@ game:
 	gcc -c game.c -I./include $(CFLAGS) $(INCLUDEFLAGES)
 	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
 
-server:
-		gcc socket_server.c -o server -std=gnu99 -Wall -Wextra -pedantic -Wno-unused-parameter
+server: clean
+		gcc server.c -o server -std=gnu99 -Wall -Wextra -pedantic -Wno-unused-parameter -lncurses
 
 client: clean
-	gcc socket_client.c -o client -std=gnu99 -D_BSD_SOURCE -Wall -Wextra -pedantic -Wno-unused-parameter
+	gcc client.c -o client -std=gnu99 -Wall -Wextra -pedantic -Wno-unused-parameter -lncurses

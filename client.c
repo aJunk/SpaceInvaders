@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "../communication.h"
+#include "communication.h"
 
 //client-variables
 Player c_player = {{0,0}, 0, 5, 1, 0};
@@ -38,10 +38,10 @@ int main(int argc, char **argv) {
 	int port = STD_PORT;
 	struct sockaddr_in address;
 	char ip[16] = "127.0.0.1";
-	
+
 	int max_y = 0, max_x = 0;
 	int ch;
-	
+
 // Check arguments
 	if(argc > 1)
 	{
@@ -73,12 +73,12 @@ int main(int argc, char **argv) {
 		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
 		return EXIT_ERROR;
 	}
-	
+
 // Fill in connection information
 	address.sin_family = AF_INET; 			//IPv4 protocol
 	address.sin_port = htons(port); 		//Port number htons converts byte order
 	ret = inet_aton(ip, &address.sin_addr);	//Convert address to bin
-	
+
 // Create Socket	Address family: AF_INET: IPv4
 //					Socket type: SOCK_STREAM: Stream
 //					Protocol: 0: Standard to socket type
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 
 // Connect to server
 	ret = connect(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0) 
+	if(ret < 0)
 	{
 		perror("Error connecting to server!");
 		return EXIT_ERROR;
@@ -127,20 +127,12 @@ int main(int argc, char **argv) {
 
 	  attron(COLOR_PAIR(bkg_colour));
 	//clientside-init <- end
-	
+
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 	//clientside -> start
 		resizeterm(MY+2, MX+2);
 
-	//GET TCP PACKAGE
-		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-		if(msgSize == 0)
-		{
-			perror("Error receiving, connection closed by client!");
-			return EXIT_ERROR;
-		}		
-		
 		//DECODE TRANSMITTED PACKAGE
 		handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
 		//DECODE END!
@@ -173,11 +165,11 @@ int main(int argc, char **argv) {
 		ch = wgetch(stdscr);
 
 		move_player(&c_player, ch);
-		
+
 		init_shot(&c_player, ch);
 
 		if(ch == 'q') break;
-		
+
 	//TRANSMIT TCP PACKAGE
 		//c_player.instructions = 16;
 		ret = send(gamesocket, &(c_player.instructions), sizeof(c_player.instructions), 0);
@@ -188,6 +180,13 @@ int main(int argc, char **argv) {
 		}
 		printf("%d\n", c_player.instructions);
 
+		//GET TCP PACKAGE
+			msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+			if(msgSize == 0)
+			{
+				perror("Error receiving, connection closed by client!");
+				return EXIT_ERROR;
+			}
 	//clientside <- end
 	}
 // GAME ENDS HERE --------------------------------------------------
@@ -198,12 +197,12 @@ int main(int argc, char **argv) {
 
 // Disconnect from server
 	ret = close(gamesocket);
-	if(ret < 0) 
+	if(ret < 0)
 	{
 		perror("Error disconnecting from server!");
 		return EXIT_ERROR;
-	}	
-	
+	}
+
 	return 0;
 }
 
@@ -274,7 +273,7 @@ void frame_change(){
 //GET FUNCTION TO EXTERNAL FILE
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
 	if(mode == DISASSEMBLE){
-    char *c_tmp = client_data_exchange_container;
+    char *c_tmp = container;
     memcpy(&c_player, c_tmp, sizeof(Player));
     c_tmp += sizeof(Player);
     memcpy(shots, c_tmp, sizeof(Shot) * AMUNITION);

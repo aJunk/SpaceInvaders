@@ -82,6 +82,8 @@ char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 
+int max_y = 0, max_x = 0;
+
 void frame_change();
 
 //global functions
