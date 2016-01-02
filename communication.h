@@ -36,7 +36,7 @@
 #define AMUNITION 1
 
 //size of data eschange containers (needs to be known at pre-compilation-time)
-#define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(int) * MX * MY + sizeof(int) * 3
+#define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(uint16_t) * MX * MY + sizeof(uint16_t) * 3
 
 
 typedef struct {
@@ -46,24 +46,24 @@ typedef struct {
 }Art;
 
 typedef struct {
-  int pos[2];
-  int type;
-  int life;
+  uint16_t pos[2];
+  uint8_t type;
+  int16_t life;
   //Art* art;
-  char status;
+  uint8_t status;
 }Object;
 
 typedef struct {
-  int pos[2];
-  int modifier;
-  int life;
-  int amunition;
-  char instructions;
+  uint16_t pos[2];
+  uint8_t modifier;
+  int16_t life;
+  uint8_t amunition;
+  uint8_t instructions;
 }Player;
 
 typedef struct{
-  int pos[2];
-  int active;
+  uint16_t pos[2];
+  uint8_t active;
 }Shot;
 
 //global functions

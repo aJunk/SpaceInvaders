@@ -21,10 +21,10 @@ char *server_res_buf = 0;
 Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
 
 //serverside functions
-void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]);
-int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned_step_y);
-int test_for_collision_with_object(int pos1[2], Object obj[MX * MY], int planned_step_x, int planned_step_y);
-int update_player(Player *_player, Object obj[MX * MY], int max_x, int max_y);
+void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
+int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
+int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
+int update_player(Player *_player, Object obj[MX * MY], uint16_t max_x, uint16_t max_y);
 
 
 void screen_init();
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
  }
 }
 
-void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]){
+void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
 
   for(int i = 0; i < AMUNITION; i++){
     if(!_shots[i].active && init_pos != NULL){
@@ -230,12 +230,12 @@ void shoot(Shot _shots[AMUNITION] ,int init_pos[2], Object obj[MX * MY]){
 
 }
 
-int test_for_collision(int pos1[2], int pos2[2], int planned_step_x, int planned_step_y){
+int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y){
   if(!(pos1[0] + planned_step_x == pos2[0] && pos1[1] + planned_step_y == pos2[1])) return 0;
   return 1;
 }
 
-int test_for_collision_with_object(int pos1[2], Object obj[MX * MY], int planned_step_x, int planned_step_y){
+int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y){
 
   int collision = 0;
   for(int i = 0; i < (MX * MY); i++){
@@ -246,7 +246,7 @@ int test_for_collision_with_object(int pos1[2], Object obj[MX * MY], int planned
   return collision;
 }
 
-int update_player(Player *_player,Object obj[MX * MY], int max_x, int max_y){
+int update_player(Player *_player,Object obj[MX * MY], uint16_t max_x, uint16_t max_y){
 
   //update player position
   if ((_player->pos[0] < (max_x - 1))&&(_player->instructions & RIGHT)) {
@@ -272,17 +272,17 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
     tmp += sizeof(Player);
     memcpy(tmp, shots, sizeof(Shot) * AMUNITION);
     tmp += sizeof(Shot) * AMUNITION;
-    int tmp_int = 0;
-    for(int i = 0; i < MX * MY; i++){
+    uint16_t tmp_int = 0;
+    for(uint16_t i = 0; i < MX * MY; i++){
       if(obj[i].status & UPDATED){
 				//printf("updated\n");
-        memcpy(tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * tmp_int, &i, sizeof(int));
-        memcpy(tmp + sizeof(int) + sizeof(Object) * tmp_int + sizeof(int) * (tmp_int + 1), &(obj[i]), sizeof(Object));
+        memcpy(tmp + sizeof(uint16_t) + (sizeof(Object) + sizeof(uint16_t)) * tmp_int, &i, sizeof(uint16_t));
+        memcpy(tmp + sizeof(uint16_t) + sizeof(Object) * tmp_int + sizeof(uint16_t) * (tmp_int + 1), &(obj[i]), sizeof(Object));
         tmp_int++;
         obj[i].status = NO_CHANGE;
       }
     }
-    memcpy(tmp, &tmp_int, sizeof(int));
+    memcpy(tmp, &tmp_int, sizeof(uint16_t));
     tmp = NULL;
 	}
   }

@@ -279,14 +279,15 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
     c_tmp += sizeof(Player);
     memcpy(shots, c_tmp, sizeof(Shot) * AMUNITION);
     c_tmp += sizeof(Shot) * AMUNITION;
-    int index = 0;
-    int count = 0;
 
-    memcpy(&count, c_tmp, sizeof(int));
+    uint16_t index = 0;
+    uint16_t count = 0;
+
+    memcpy(&count, c_tmp, sizeof(uint16_t));
     if(count > 0){
-      for(int i = 0; i < count; i++){
-        memcpy(&index, c_tmp + sizeof(int) + (sizeof(Object) + sizeof(int)) * i, sizeof(int));
-        memcpy(&(obj[index]), c_tmp + sizeof(int) + sizeof(Object) * i + sizeof(int) * (i + 1), sizeof(Object));
+      for(uint16_t i = 0; i < count; i++){
+        memcpy(&index, c_tmp + sizeof(uint16_t) + (sizeof(Object) + sizeof(uint16_t)) * i, sizeof(uint16_t));
+        memcpy(&(obj[index]), c_tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
 
 				//look for destroied objects
 				if(obj[index].life <= 0)beep();
