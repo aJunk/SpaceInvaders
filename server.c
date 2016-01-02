@@ -194,6 +194,7 @@ int main(int argc, char **argv) {
 	if(ret < 0)
 	{
 		perror("Error disconnecting from client!");
+		endwin();
 		return EXIT_ERROR;
 	}
 
