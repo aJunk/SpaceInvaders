@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in address;
 	socklen_t addrLength;
 
-	int ch;
+
 
 
 	screen_init();
