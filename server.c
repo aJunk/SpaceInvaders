@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 		return EXIT_ERROR;
 	}
 
-// Fill in connection information
+	// Fill in connection information
 	address.sin_family = AF_INET;			//IPv4 protocol
 	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
 	address.sin_port = htons(port);		//Port number htons converts byte order
