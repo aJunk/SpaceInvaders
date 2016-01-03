@@ -53,7 +53,7 @@ game:
 	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
 
 server: clean
-		gcc server.c -o server -std=gnu99 -Wall -Wextra -pedantic -Wno-unused-parameter -lncurses
+		gcc server.c -o server -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
 
 client: clean
-	gcc client.c -o client -std=gnu99 -Wall -Wextra -pedantic -Wno-unused-parameter -lncurses
+	gcc client.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
