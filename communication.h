@@ -1,6 +1,10 @@
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
+#ifdef __linux__
+#define afplay aplay
+#endif
+
 #define PORT_MIN 1024
 #define PORT_MAX 65535
 #define STD_PORT 4657
