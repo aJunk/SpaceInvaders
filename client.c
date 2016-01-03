@@ -135,12 +135,13 @@ int main(int argc, char **argv) {
 
 		//GET TCP PACKAGE
 		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-			msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-			if(msgSize == 0)
-			{
-				perror("Error receiving, connection closed by client!");
-				return EXIT_ERROR;
-			}
+		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		if(msgSize == 0)
+		{
+			perror("Error receiving, connection closed by client!");
+			return EXIT_ERROR;
+		}
+
 		//DECODE TRANSMITTED PACKAGE
 		handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
 		//DECODE END!
@@ -232,6 +233,7 @@ void init_shot(Player *_player, int input){
   switch (input){
     case ' ':
       _player->instructions |= INIT_SHOT;
+			system("afplay ./fx/shoot-03.wav &");
       break;
     default:
       break;
@@ -290,7 +292,7 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
         memcpy(&(obj[index]), c_tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
 
 				//look for destroied objects
-				if(obj[index].life <= 0)beep();
+				if(obj[index].life <= 0)system("afplay ./fx/explosion-04.wav &");
       }
     }
 
