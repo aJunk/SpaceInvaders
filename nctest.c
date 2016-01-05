@@ -18,17 +18,17 @@
 
 
 int main(int argc, char **argv) {
-		int ch = 0;
+		int ch;
 	  initscr();
 	  noecho();
 	  cbreak();
 	  keypad(stdscr, TRUE);
 	  curs_set(FALSE);
 	  timeout(0);
-	  resizeterm(MY+2, MX+2);
-	  getmaxyx(stdscr, max_y, max_x);
+	  resizeterm(50+2, 50+2);
+//	  getmaxyx(stdscr, max_y, max_x);
 	  clear();
-
+ch = 0;
 	  refresh();
 	  wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 	  // Global var `stdscr` is created by the call to `initscr()`
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 	//clientside -> start
-		resizeterm(MY+2, MX+2);
+		resizeterm(50+2, 50+2);
 		clear();
 		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 
@@ -44,11 +44,11 @@ int main(int argc, char **argv) {
 
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
-		usleep(DELAY);
+		usleep(100000);
 
 		//read user-input
 		ch = wgetch(stdscr);
-
+		mvprintw(1,1, "%d", ch);
 		if(ch == 'q') break;
 		
 
