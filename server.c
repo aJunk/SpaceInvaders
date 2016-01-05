@@ -151,6 +151,7 @@ int main(int argc, char **argv) {
 		if(msgSize == 0)
 		{
 			perror("Error receiving, connection closed by client!");
+			endwin();
 			return EXIT_ERROR;
 		}
 		//printf("%d\n", s_player.instructions);
