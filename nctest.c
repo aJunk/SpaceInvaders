@@ -16,19 +16,28 @@
 #include <string.h>
 #include "communication.h"
 
+void frame_change();
 
 int main(int argc, char **argv) {
 		int ch;
-	  initscr();
+
+		initscr();
+		keypad(stdscr, TRUE);
 	  noecho();
 	  cbreak();
-	  keypad(stdscr, TRUE);
 	  curs_set(FALSE);
 	  timeout(0);
 	  resizeterm(50+2, 50+2);
+/*
+		initscr();
+        curs_set(FALSE);
+        cbreak();
+        timeout(0);
+        keypad(stdscr, TRUE);
 //	  getmaxyx(stdscr, max_y, max_x);
 	  clear();
-ch = 0;
+		*/
+		ch = 0;
 	  refresh();
 	  wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 	  // Global var `stdscr` is created by the call to `initscr()`
@@ -40,17 +49,18 @@ ch = 0;
 		clear();
 		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 
-		refresh();
-
+		frame_change();
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
 		usleep(100000);
 
 		//read user-input
-		ch = wgetch(stdscr);
+		ch = getch();
+		mvprintw(2,1, "Hello");
 		mvprintw(1,1, "%d", ch);
+		refresh();
 		if(ch == 'q') break;
-		
+
 
 	//clientside <- end
 	}
@@ -59,4 +69,17 @@ ch = 0;
   beep();
   endwin();
 	return 0;
+}
+
+
+void frame_change(){
+  static char toggle = 0;
+
+  if(toggle){
+    mvprintw(0, 0, "+");
+    toggle = 0;
+  }else{
+    mvprintw(0, 0, "-");
+    toggle = 1;
+  }
 }
