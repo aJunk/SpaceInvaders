@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 
 
 
-		resizeterm(MY+2, MX+2);
+		//resizeterm(MY+2, MX+2);
 		clear();
 		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
 		//draw player
