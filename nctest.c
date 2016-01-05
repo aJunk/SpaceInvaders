@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 		ch = wgetch(stdscr);
 
 		if(ch == 'q') break;
-		printf("%d\n", c_player.instructions);
+		
 
 	//clientside <- end
 	}
