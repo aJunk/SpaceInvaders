@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 	//clientside -> start
-		resizeterm(MY+2, MX+2);
+//		resizeterm(MY+2, MX+2);
 
 		//GET TCP PACKAGE
 		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
