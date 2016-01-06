@@ -22,7 +22,11 @@ Object c_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
+
 WINDOW* fieldscr;
+WINDOW* statscr;
+
+
 //clientside functions
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
@@ -102,25 +106,22 @@ int main(int argc, char **argv) {
 
 
 // GAME STARTS HERE ------------------------------------------------
-	//clientside-init -> start
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
 	  initscr();
+
+		//position screens...all positions from here on out are relative to local origins!
 		fieldscr = newwin(MY+2, MX+2, 0, 0);
-	  noecho();
+		statscr = newwin(STAT_MY, STAT_MX, MY + 10 - STAT_MY, MX + 10 - STAT_MX);
+
+		noecho();
 	  cbreak();
 	  keypad(fieldscr, TRUE);
 	  curs_set(FALSE);
 	  wtimeout(fieldscr, 0);
+		//needs to be done better...(great comment!)
 	  //resizeterm(MY+2, MX+2);
-	  getmaxyx(fieldscr, max_y, max_x);
-	  wclear(fieldscr);
-
-	  wrefresh(fieldscr);
-	  wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
-	  // Global var `fieldscr` is created by the call to `initscr()`
-
 	  //init colors
 	  start_color();			/* Start color 			*/
 		init_pair(obj_colour, COLOR_RED, COLOR_BLACK);
@@ -128,18 +129,17 @@ int main(int argc, char **argv) {
 	  init_pair(player_colour, COLOR_YELLOW, COLOR_BLACK);
 
 	  wattron( fieldscr, COLOR_PAIR(bkg_colour));
-	//clientside-init <- end
+		wattron( statscr, COLOR_PAIR(bkg_colour));
 
-		//additional windows
-		//status-window
-		WINDOW* statscr = newwin(STAT_MY, STAT_MX, MY + 10 - STAT_MY, MX + 10 - STAT_MX);
+		wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
 		wborder(statscr,  '|', '|', '-', '-', '+', '+', '+', '+');
 
+	  wrefresh(fieldscr);
+		wrefresh(statscr);
 
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 	//clientside -> start
-//		resizeterm(MY+2, MX+2);
 
 		//GET TCP PACKAGE
 		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);

@@ -16,7 +16,7 @@
 #define PLAYME_SHOT "aplay ./fx/shoot-03.wav &"
 #endif
 
-#ifdef __apple__
+#ifdef __APPLE__
 #define PLAYME_EXPLOSION "afplay ./fx/explosion-04.wav &"
 #define PLAYME_SHOT "afplay ./fx/shoot-03.wav &"
 #endif
