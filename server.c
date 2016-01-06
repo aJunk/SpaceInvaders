@@ -19,13 +19,16 @@ Object s_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *server_data_exchange_container = NULL;
 char *server_res_buf = 0;
 Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
+char dir = 'r';		//direction objects move to
 
 //serverside functions
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
 int update_player(Player *_player, Object obj[MX * MY], uint16_t max_x, uint16_t max_y);
-
+void place_object(int lines, int appearChance);	//if lines == 0: object will appear at random xy-Position
+void move_object(uint8_t type);
+int get_empty_obj_num(int objn);
 
 void screen_init();
 void draw_obj(Object obj[MX * MY]);
@@ -40,31 +43,27 @@ int main(int argc, char **argv) {
 	int msgSize = -1;
 	int gamesocket, new_gamesocket;
 	int port = STD_PORT;
+	int loopCount = 0;					//count number of while-circles
+	int appearTime = 25;				//number of while-circles until new objects appear
+	int appearChance = 20;				//chance that an object appears at a position
 	struct sockaddr_in address;
 	socklen_t addrLength;
 
-
-
-
 	screen_init();
 
-// Check arguments
-	if(argc > 2)
-	{
-		if(strcmp(argv[1], "-p") == 0)
-		{
+	// Check arguments
+	if(argc > 2){
+		if(strcmp(argv[1], "-p") == 0){
 			port = atoi(argv[2]);			//Convert string argument to int
 		}
-		else
-		{
-			//printf("ERROR: Invalid argument! Usage: server -p <port>\n");
+		else{
+			printf("ERROR: Invalid argument! Usage: server -p <port>\n");
 			return EXIT_ERROR;
 		}
 	}
 
-	if(port <= PORT_MIN || port >= PORT_MAX)
-	{
-		//printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
+	if(port <= PORT_MIN || port >= PORT_MAX){
+		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
 		return EXIT_ERROR;
 	}
 
@@ -73,140 +72,131 @@ int main(int argc, char **argv) {
 	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
 	address.sin_port = htons(port);		//Port number htons converts byte order
 
-// Create Socket	Address family: AF_INET: IPv4
-//					Socket type: SOCK_STREAM: Stream
-//					Protocol: 0: Standard to socket type
+	// Create Socket	Address family: AF_INET: IPv4
+	//					Socket type: SOCK_STREAM: Stream
+	//					Protocol: 0: Standard to socket type
 	gamesocket = socket (AF_INET, SOCK_STREAM, 0);
-	if (gamesocket == -1)
-	{
+	if (gamesocket == -1){
 		perror("Error creating socket!");
 		return EXIT_ERROR;
 	}
-	//printf("Server Socket created.\n");
 
-// Bind Socket to process
+	// Bind Socket to process
 	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0)
-	{
+	if(ret < 0){
 		perror("Error binding! Port not free.");
 		return EXIT_ERROR;
 	}
-	//printf("Bind successfully.\n");
 
-// Make listener (queue) for new connections
+	// Make listener (queue) for new connections
 	ret = listen(gamesocket, 5);		//max. 5 connections
-	if(ret < 0)
-	{
+	if(ret < 0){
 		perror("Error making listener!");
 		return EXIT_ERROR;
 	}
-	//printf("Listener initialized.\n");
 
 	while(1)
 	{
-// Get next connection in queue
+		// Get next connection in queue
 		addrLength = sizeof(address);
 		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
-		if(new_gamesocket < 0)
-		{
+		if(new_gamesocket < 0){
 			perror("Error creating new socket!");
 			return EXIT_ERROR;
 		}
-		//printf ("New Client connected: %s\n", inet_ntoa (address.sin_addr));
 
 // GAME STARTS HERE ------------------------------------------------
 	//serverside-init -> start
-	  //add attributes
-	  server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+		//add attributes
+		server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
-	  time_t t;
-	  //for(int i = 0; i < MX * MY; i++) obj[i].life = 0;
-	  srand((unsigned) time(&t));
+		//create objects on random positions
+		time_t t;
+		srand((unsigned) time(&t));
 
-	  for(int i = 0; i < 10; i++){
-		s_obj[i].pos[0] = rand() % MX;
-		s_obj[i].pos[1] = rand() % MY;
-
-		s_obj[i].life = rand() % 4;
-		s_obj[i].status = UPDATED;
-	  }
+		for(int i = 0; i < 10; i++){
+			s_obj[i].pos[0] = rand() % MX;
+			s_obj[i].pos[1] = rand() % MY;
+			s_obj[i].life = rand() % 4;
+			s_obj[i].status = UPDATED;
+		}
+		
+		/*for(int i = 0; i < 15; i++){	//WHY NOT WORKING?
+			place_object(0, 100);
+		}*/
+		
+		//create some objects in lines
+		place_object(3, appearChance);
 	//serverside-init <- end
 //BEGIN MAIN LOOP-------------------------------------------------------------
-	while(1) {
-	//serverside -> start
+		while(1) {
+			//encode TCP package
+			handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
-	handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
-	//ENCODE END!
+			//transmit TCP package
+	//TODO: Calculate size of container to send
+			ret = send(new_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+			if(ret < 0){
+				perror("Error sending!");
+				free(server_data_exchange_container);
+				endwin();
+				return EXIT_ERROR;
+			}
 
-	//TRANSMIT TCP PACKAGE
-	ret = send(new_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-	if(ret < 0)
-	{
-		perror("Error sending!");
-		return EXIT_ERROR;
-	}
+			//get TCP package
+			msgSize = recv(new_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
+			if(msgSize == 0){
+				perror("Error receiving, connection closed by client!");
+				free(server_data_exchange_container);
+				endwin();
+				return EXIT_ERROR;
+			}
 
-	//GET TCP PACKAGE
-		msgSize = recv(new_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
-		if(msgSize == 0)
-		{
-			perror("Error receiving, connection closed by client!");
-			endwin();
-			return EXIT_ERROR;
+			//initiate shot & update player
+			if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
+			update_player(&s_player, s_obj, MX, MY);
+
+			//update shots
+			shoot(s_shots, NULL, s_obj);
+
+			//move objects
+			if (loopCount == appearTime){
+				move_object(1);
+				loopCount = 0;
+			}
+			
+			//resizeterm(MY+2, MX+2);
+			clear();
+			wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
+			//draw player
+			draw_player(&s_player);
+			//draw all objects
+			draw_obj(s_obj);
+			//draw shots
+			draw_shot(s_shots);
+			//simple frame-change indicator
+			frame_change();
+			refresh();
+
+			loopCount++;
 		}
-		//printf("%d\n", s_player.instructions);
-
-		//initiate shot & update player
-		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
-		update_player(&s_player, s_obj, MX, MY);
-
-		//update shots
-		shoot(s_shots, NULL, s_obj);
-
-
-
-		//resizeterm(MY+2, MX+2);
-		clear();
-		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-		//draw player
-		draw_player(&s_player);
-		//draw all objects
-		draw_obj(s_obj);
-		//draw shots
-		draw_shot(s_shots);
-		//simple frame-change indicator
-		frame_change();
-		refresh();
-
-
-		//ENCODE NETWORK PACKAGE
-
-	//serverside <- end
-	}
 // GAME ENDS HERE --------------------------------------------------
 
-  beep();
-  free(server_data_exchange_container);
-
-  //endwin(); not needed on server
-
-// Disconnect from client
+	beep();
+	free(server_data_exchange_container);
+	endwin();
+	
+	//disconnect from client
 	ret = close(gamesocket);
-	if(ret < 0)
-	{
+	if(ret < 0){
 		perror("Error disconnecting from client!");
-		endwin();
 		return EXIT_ERROR;
 	}
-
-	endwin();
-
 	return 0;
- }
+  }
 }
 
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
-
   for(int i = 0; i < AMUNITION; i++){
     if(!_shots[i].active && init_pos != NULL){
       _shots[i].active = 1;
@@ -235,7 +225,6 @@ int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x
 }
 
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y){
-
   int collision = 0;
   for(int i = 0; i < (MX * MY); i++){
       if(test_for_collision(pos1, obj[i].pos, planned_step_x, planned_step_y) && (obj[i].life > 0)) collision ++;
@@ -246,7 +235,6 @@ int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t
 }
 
 int update_player(Player *_player,Object obj[MX * MY], uint16_t max_x, uint16_t max_y){
-
   //update player position
   if ((_player->pos[0] < (max_x - 1))&&(_player->instructions & RIGHT)) {
     if(!test_for_collision_with_object(_player->pos, obj, 1, 0)) _player->pos[0]++;
@@ -257,7 +245,6 @@ int update_player(Player *_player,Object obj[MX * MY], uint16_t max_x, uint16_t 
   } else if((_player->pos[1]  > 0)&&(_player->instructions & UP)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, -1)) _player->pos[1]--;
   }
-
   return 0;
 }
 
@@ -340,4 +327,102 @@ void frame_change(){
     mvprintw(0, 0, "-");
     toggle = 1;
   }
+}
+
+void move_object(uint8_t type){
+	int yOffset = 0;
+	int xOffset = 1;
+	int appearChance = 20;
+
+	if(type == 1){
+		//check if y-move is necessary
+		for(int i = 0; i < (MX*MY); i++){
+			if(s_obj[i].type == 1 && s_obj[i].life > 0){		//check if it is a wandering object
+				if(dir == 'r' && s_obj[i].pos[0]+1 >= MX){		//if wandering right would hit wall
+					yOffset = 1;
+					xOffset = 0;
+					break;
+				}
+				else if(dir == 'l' && s_obj[i].pos[0] <= 0){	//if wandering left would hit wall
+					yOffset = 1;
+					xOffset = 0;
+					break;
+				}
+			}
+		}
+		
+		//wander right or left
+		if(dir == 'r'){
+			for(int i = 0; i < (MX*MY); i++){
+				if(s_obj[i].type == 1 && s_obj[i].life > 0){	//check if it is a wandering object
+					s_obj[i].pos[0] = s_obj[i].pos[0] + xOffset;
+					s_obj[i].pos[1] = s_obj[i].pos[1] + yOffset;
+					s_obj[i].status = UPDATED;
+				}
+			}
+		}
+		else if(dir == 'l'){
+			for(int i = 0; i < (MX*MY); i++){
+				if(s_obj[i].type == 1 && s_obj[i].life > 0){	//check if it is a wandering object
+					s_obj[i].pos[0] = s_obj[i].pos[0] - xOffset;
+					s_obj[i].pos[1] = s_obj[i].pos[1] + yOffset;
+					s_obj[i].status = UPDATED;
+				}
+			}
+		}
+		
+		if(yOffset == 1){
+			place_object(1, appearChance);
+			if(dir == 'l'){
+				dir = 'r';		//change direction for next time
+			}
+			else{
+				dir = 'l';
+			}
+		}
+	}
+}
+
+void place_object(int lines, int appearChance){
+	int objn = 0;
+	
+	time_t t;
+	srand((unsigned) time(&t));
+	
+	if(lines == 0){
+		objn = get_empty_obj_num(objn);
+		s_obj[objn].pos[0] = rand() % MX;
+		s_obj[objn].pos[1] = rand() % MY;
+		s_obj[objn].life = rand() % 4;
+		s_obj[objn].status = UPDATED;
+	}
+	
+	for(int i = 0; i < lines; i++){					//do it for given number of lines
+		for(int j = 3; j < (MX-3); j++){			//do it from 3rd position in row to 3rd-last position in row
+			if((rand() % 100) < appearChance){
+				objn = get_empty_obj_num(objn);
+				s_obj[objn].pos[0] = j;
+				s_obj[objn].pos[1] = i;
+				s_obj[objn].type = 1;				//identify wandering objects
+				s_obj[objn].life = (rand() % 3) + 1;
+				s_obj[objn].status = UPDATED;
+				objn++;
+			}
+		}
+	}
+}
+
+int get_empty_obj_num(int objn){
+	/*while (1) {
+		if(s_obj[objn].life <= 0){
+			return objn;
+		}
+		else {
+			objn++;
+		}
+	}*/
+	while(s_obj[objn].life > 0){		//search for dead objects
+		objn++;
+	}
+	return objn;
 }
