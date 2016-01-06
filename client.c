@@ -22,7 +22,7 @@ Object c_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
-
+WINDOW* fieldscr;
 //clientside functions
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
 
 	int max_y = 0, max_x = 0;
 	int ch;
+
 
 // Check arguments
 	if(argc > 1)
@@ -106,18 +107,19 @@ int main(int argc, char **argv) {
 	  memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
 	  initscr();
+		fieldscr = newwin(MY+2, MX+2, 0, 0);
 	  noecho();
 	  cbreak();
-	  keypad(stdscr, TRUE);
+	  keypad(fieldscr, TRUE);
 	  curs_set(FALSE);
-	  timeout(0);
-	  resizeterm(MY+2, MX+2);
-	  getmaxyx(stdscr, max_y, max_x);
-	  clear();
+	  wtimeout(fieldscr, 0);
+	  //resizeterm(MY+2, MX+2);
+	  getmaxyx(fieldscr, max_y, max_x);
+	  wclear(fieldscr);
 
-	  refresh();
-	  wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-	  // Global var `stdscr` is created by the call to `initscr()`
+	  wrefresh(fieldscr);
+	  wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
+	  // Global var `fieldscr` is created by the call to `initscr()`
 
 	  //init colors
 	  start_color();			/* Start color 			*/
@@ -125,8 +127,14 @@ int main(int argc, char **argv) {
 	  init_pair(bkg_colour, COLOR_GREEN, COLOR_BLACK);
 	  init_pair(player_colour, COLOR_YELLOW, COLOR_BLACK);
 
-	  attron(COLOR_PAIR(bkg_colour));
+	  wattron( fieldscr, COLOR_PAIR(bkg_colour));
 	//clientside-init <- end
+
+		//additional windows
+		//status-window
+		WINDOW* statscr = newwin(STAT_MY, STAT_MX, MY + 10 - STAT_MY, MX + 10 - STAT_MX);
+		wborder(statscr,  '|', '|', '-', '-', '+', '+', '+', '+');
+
 
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
@@ -149,9 +157,9 @@ int main(int argc, char **argv) {
 		c_player.instructions = 0;
 		//redraw screen
 
-		clear();
-		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-
+		wclear(fieldscr);
+		wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
+		wrefresh(statscr);
 		//draw player
 		draw_player(&c_player);
 
@@ -164,14 +172,14 @@ int main(int argc, char **argv) {
 		//simple frame-change indicator
 		frame_change();
 
-		refresh();
+		wrefresh(fieldscr);
 
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
 		usleep(DELAY);
 
 		//read user-input
-		ch = wgetch(stdscr);
+		ch = wgetch(fieldscr);
 
 		move_player(&c_player, ch);
 
@@ -241,23 +249,23 @@ void init_shot(Player *_player, int input){
 }
 
 void draw_obj(Object _obj[MX * MY]){
-  attron(COLOR_PAIR(obj_colour));
+  wattron( fieldscr, COLOR_PAIR(obj_colour));
 
-  for(int i = 0; i < MX * MY; i++)if(_obj[i].life > 0)mvprintw(_obj[i].pos[1] + 1, _obj[i].pos[0] + 1, "X");
+  for(int i = 0; i < MX * MY; i++)if(_obj[i].life > 0)mvwprintw(fieldscr, _obj[i].pos[1] + 1, _obj[i].pos[0] + 1, "X");
 
-  attron(COLOR_PAIR(bkg_colour));
+  wattron( fieldscr, COLOR_PAIR(bkg_colour));
 }
 
 void draw_player(Player *_player){
-  attron(COLOR_PAIR(player_colour));
+  wattron( fieldscr, COLOR_PAIR(player_colour));
 
-  mvprintw(_player->pos[1] + 1, _player->pos[0] + 1, "o");
+  mvwprintw(fieldscr, _player->pos[1] + 1, _player->pos[0] + 1, "o");
 
-  attron(COLOR_PAIR(bkg_colour));
+  wattron( fieldscr, COLOR_PAIR(bkg_colour));
 }
 
 void draw_shot(Shot _shots[AMUNITION]){
-  if(_shots[0].active)mvprintw(_shots[0].pos[1], _shots[0].pos[0] + 1, "|");
+  if(_shots[0].active)mvwprintw(fieldscr, _shots[0].pos[1], _shots[0].pos[0] + 1, "|");
 }
 
 void frame_change(){

@@ -52,6 +52,10 @@
 #define MX 50
 #define MY 10
 
+//STAT-SCREEN width & height
+#define STAT_MX 50
+#define STAT_MY 3
+
 //size of amunition array
 #define AMUNITION 1
 
