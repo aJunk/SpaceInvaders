@@ -57,3 +57,6 @@ server: clean
 
 client: clean
 	gcc client.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
+	
+testrand: clean
+	gcc testrand.c -o test -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
