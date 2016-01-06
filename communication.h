@@ -1,6 +1,16 @@
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
+
+#ifdef NOSOUND
+#define SOUND 0
+#endif
+
+#ifdef HAVESOUND
+#define SOUND 1
+#endif
+
+
 #ifdef __linux__
 #define PLAYME_EXPLOSION "aplay ./fx/explosion-04.wav &"
 #define PLAYME_SHOT "aplay ./fx/shoot-03.wav &"
