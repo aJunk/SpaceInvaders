@@ -2,7 +2,13 @@
 #define COMMUNICATION_H
 
 #ifdef __linux__
-#define afplay aplay
+#define PLAYME_EXPLOSION "aplay ./fx/explosion-04.wav &"
+#define PLAYME_SHOT "aplay ./fx/shoot-03.wav &"
+#endif
+
+#ifdef __apple__
+#define PLAYME_EXPLOSION "afplay ./fx/explosion-04.wav &"
+#define PLAYME_SHOT "afplay ./fx/shoot-03.wav &"
 #endif
 
 #define PORT_MIN 1024
