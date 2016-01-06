@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
 
 		//position screens...all positions from here on out are relative to local origins!
 		fieldscr = newwin(MY+2, MX+2, 0, 0);
-		statscr = newwin(STAT_MY, STAT_MX, MY + 10 - STAT_MY, MX + 10 - STAT_MX);
+		statscr = newwin(STAT_MY , STAT_MX + 2, MY + 2, 0);
 
 		noecho();
 	  cbreak();
@@ -155,24 +155,22 @@ int main(int argc, char **argv) {
 		//DECODE END!
 
 		c_player.instructions = 0;
+
 		//redraw screen
+
+		//wrefresh(statscr);
 
 		wclear(fieldscr);
 		wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
-		wrefresh(statscr);
-		//draw player
+		//draw stuff
 		draw_player(&c_player);
-
-		//draw all objects
 		draw_obj(c_obj);
-
-		//draw shots
 		draw_shot(c_shots);
-
 		//simple frame-change indicator
 		frame_change();
 
 		wrefresh(fieldscr);
+
 
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
@@ -186,6 +184,8 @@ int main(int argc, char **argv) {
 		init_shot(&c_player, ch);
 
 		if(ch == 'q') break;
+
+		wrefresh(statscr);
 
 	//TRANSMIT TCP PACKAGE
 		//c_player.instructions = 16;
@@ -221,17 +221,22 @@ void move_player(Player *_player, int input){
   switch (input){
     case KEY_RIGHT:
       _player->instructions |= RIGHT;
+			mvwprintw(statscr, 1,1,"RIGHT ");
       break;
     case KEY_LEFT:
       _player->instructions |= LEFT;
+			mvwprintw(statscr, 1,1,"LEFT ");
       break;
     case KEY_UP:
       _player->instructions |= UP;
+			mvwprintw(statscr, 1,1,"UP   ");
       break;
     case KEY_DOWN:
       _player->instructions |= DOWN;
+			mvwprintw(statscr, 1,1,"DOWN ");
       break;
     default:
+			mvwprintw(statscr, 1,1,"     ");
       break;
   }
 
@@ -265,7 +270,7 @@ void draw_player(Player *_player){
 }
 
 void draw_shot(Shot _shots[AMUNITION]){
-  if(_shots[0].active)mvwprintw(fieldscr, _shots[0].pos[1], _shots[0].pos[0] + 1, "|");
+  if(_shots[0].active)mvwprintw(fieldscr, _shots[0].pos[1], _shots[0].pos[0] + 1,  "|");
 }
 
 void frame_change(){

@@ -113,18 +113,18 @@ int main(int argc, char **argv) {
 		//create objects on random positions
 		time_t t;
 		srand((unsigned) time(&t));
-
+		/*
 		for(int i = 0; i < 10; i++){
 			s_obj[i].pos[0] = rand() % MX;
 			s_obj[i].pos[1] = rand() % MY;
 			s_obj[i].life = rand() % 4;
 			s_obj[i].status = UPDATED;
 		}
-		
+		*/
 		/*for(int i = 0; i < 15; i++){	//WHY NOT WORKING?
 			place_object(0, 100);
 		}*/
-		
+
 		//create some objects in lines
 		place_object(3, appearChance);
 	//serverside-init <- end
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 				move_object(1);
 				loopCount = 0;
 			}
-			
+
 			//resizeterm(MY+2, MX+2);
 			clear();
 			wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
 	beep();
 	free(server_data_exchange_container);
 	endwin();
-	
+
 	//disconnect from client
 	ret = close(gamesocket);
 	if(ret < 0){
@@ -350,7 +350,7 @@ void move_object(uint8_t type){
 				}
 			}
 		}
-		
+
 		//wander right or left
 		if(dir == 'r'){
 			for(int i = 0; i < (MX*MY); i++){
@@ -370,7 +370,7 @@ void move_object(uint8_t type){
 				}
 			}
 		}
-		
+
 		if(yOffset == 1){
 			place_object(1, appearChance);
 			if(dir == 'l'){
@@ -385,10 +385,10 @@ void move_object(uint8_t type){
 
 void place_object(int lines, int appearChance){
 	int objn = 0;
-	
+
 	time_t t;
 	srand((unsigned) time(&t));
-	
+
 	if(lines == 0){
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
@@ -396,7 +396,7 @@ void place_object(int lines, int appearChance){
 		s_obj[objn].life = rand() % 4;
 		s_obj[objn].status = UPDATED;
 	}
-	
+
 	for(int i = 0; i < lines; i++){					//do it for given number of lines
 		for(int j = 3; j < (MX-3); j++){			//do it from 3rd position in row to 3rd-last position in row
 			if((rand() % 100) < appearChance){

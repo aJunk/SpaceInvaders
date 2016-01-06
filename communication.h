@@ -56,6 +56,10 @@
 #define STAT_MX 50
 #define STAT_MY 3
 
+//modes for clearing windows
+#define LEAVE_BORDER 0
+#define NO_BORDER 1
+
 //size of amunition array
 #define AMUNITION 1
 
