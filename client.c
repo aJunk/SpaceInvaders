@@ -233,7 +233,7 @@ void init_shot(Player *_player, int input){
   switch (input){
     case ' ':
       _player->instructions |= INIT_SHOT;
-			system("afplay ./fx/shoot-03.wav &");
+			system(PLAYME_SHOT);
       break;
     default:
       break;
@@ -292,7 +292,7 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
         memcpy(&(obj[index]), c_tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
 
 				//look for destroied objects
-				if(obj[index].life <= 0)system("afplay ./fx/explosion-04.wav &");
+				if(obj[index].life <= 0)system(PLAYME_EXPLOSION);
       }
     }
 
