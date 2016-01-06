@@ -21,6 +21,8 @@ char *server_res_buf = 0;
 Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
 char dir = 'r';		//direction objects move to
 
+time_t t;
+
 //serverside functions
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
@@ -111,7 +113,6 @@ int main(int argc, char **argv) {
 		server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
 		//create objects on random positions
-		time_t t;
 		srand((unsigned) time(&t));
 		/*
 		for(int i = 0; i < 10; i++){
@@ -126,7 +127,12 @@ int main(int argc, char **argv) {
 		}*/
 
 		//create some objects in lines
-		place_object(3, appearChance);
+		//place_object(3, appearChance);
+		place_object(0, 0);
+		place_object(0, 0);
+		place_object(0, 0);
+		place_object(0, 0);
+
 	//serverside-init <- end
 //BEGIN MAIN LOOP-------------------------------------------------------------
 		while(1) {
@@ -203,9 +209,8 @@ void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
       _shots[i].pos[0] = init_pos[0];
       _shots[i].pos[1] = init_pos[1];
     }else if(_shots[i].active && obj != NULL){
-      _shots[i].pos[1] -= 1;
 
-      if((_shots[i].pos[1] < 1)||test_for_collision_with_object(_shots[i].pos, obj, 0, 0)){
+      if((_shots[i].pos[1] < 2)||test_for_collision_with_object(_shots[i].pos, obj, 0, 0)){
           for(int o = 0; o < MX * MY; o++)if((obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1])){
             obj[o].life--;
             obj[o].status = UPDATED;
@@ -214,6 +219,8 @@ void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
       }else{
         //mvprintw(_shots[i].pos[1], _shots[i].pos[0] + 1, "|");
       }
+
+			_shots[i].pos[1] -= 1;
     }
   }
 
@@ -386,14 +393,11 @@ void move_object(uint8_t type){
 void place_object(int lines, int appearChance){
 	int objn = 0;
 
-	time_t t;
-	srand((unsigned) time(&t));
-
 	if(lines == 0){
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
 		s_obj[objn].pos[1] = rand() % MY;
-		s_obj[objn].life = rand() % 4;
+		s_obj[objn].life = (rand() % 3) +1;
 		s_obj[objn].status = UPDATED;
 	}
 

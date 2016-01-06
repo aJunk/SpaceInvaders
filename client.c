@@ -305,7 +305,9 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
         memcpy(&(obj[index]), c_tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
 
 				//look for destroied objects
-				if(obj[index].life <= 0 && SOUND)system(PLAYME_EXPLOSION);
+				if(obj[index].life <= 0 && obj[index].status == UPDATED && SOUND)system(PLAYME_EXPLOSION);
+
+				obj[index].status = NO_CHANGE;
       }
     }
 
