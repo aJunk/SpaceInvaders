@@ -57,34 +57,19 @@ int main(int argc, char **argv) {
 	// Check arguments
 	if(argc > 2){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
-		else{
-			printf("ERROR: Invalid argument! Usage: server -p <port>\n");
-			return EXIT_ERROR;
-		}
+		else error_handler(-1);
 	}
-	if(port <= PORT_MIN || port >= PORT_MAX){
-		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
-		return EXIT_ERROR;
-	}
+	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
 	
 	//Launch gameserver
 	gamesocket = launch_gameserver(port);
-	if(gamesocket < 0){
-		if(gamesocket == -1) perror("Error creating socket");
-		else if(gamesocket == -2) perror("Error binding. Port not free");
-		else if(gamesocket == -3) perror("Error launching listener");
-		return EXIT_ERROR;
-	}
+	if(gamesocket < 0) error_handler(gamesocket);
 	
-	while(1)
-	{
+	while(1){
 		// Get next connection in queue
 		addrLength = sizeof(address);
 		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
-		if(new_gamesocket < 0){
-			perror("Error creating new socket!");
-			return EXIT_ERROR;
-		}
+		if(new_gamesocket < 0) error_handler(-6);
 
 // GAME STARTS HERE ------------------------------------------------
 	//serverside-init -> start
@@ -110,19 +95,15 @@ int main(int argc, char **argv) {
 	//TODO: Calculate size of container to send
 			ret = send(new_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 			if(ret < 0){
-				perror("Error sending!");
 				free(server_data_exchange_container);
-				endwin();
-				return EXIT_ERROR;
+				error_handler(-7);
 			}
 
 			//get TCP package
 			msgSize = recv(new_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
 			if(msgSize == 0){
-				perror("Error receiving, connection closed by client");
 				free(server_data_exchange_container);
-				endwin();
-				return EXIT_ERROR;
+				error_handler(-8);
 			}
 
 			//initiate shot & update player
@@ -161,10 +142,8 @@ int main(int argc, char **argv) {
 
 	//disconnect from client
 	ret = close(gamesocket);
-	if(ret < 0){
-		perror("Error disconnecting from client");
-		return EXIT_ERROR;
-	}
+	if(ret < 0) error_handler(-9);
+	
 	return 0;
   }
 }
@@ -402,15 +381,15 @@ int launch_gameserver(int port){
 
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
 	gamesocket = socket (AF_INET, SOCK_STREAM, 0);
-	if (gamesocket < 0) return -1;
+	if (gamesocket < 0) return -3;
 
 	// Bind Socket to process
 	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0) return -2;
+	if(ret < 0) return -4;
 
 	// Make listener (queue) for new connections
-	ret = listen(gamesocket, 5);		//max. 5 connections
-	if(ret < 0) return -3;
+	ret = listen(gamesocket, NUM_CONNECTIONS);
+	if(ret < 0) return -5;
 	
 	return gamesocket;
 }

@@ -24,6 +24,7 @@
 #define PORT_MIN 1024
 #define PORT_MAX 65535
 #define STD_PORT 4657
+#define NUM_CONNECTIONS 5
 #define EXIT_ERROR 1
 
 //ncurses color functions
@@ -96,5 +97,6 @@ typedef struct{
 
 //global functions
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
+void error_handler(int errno);
 
 #endif
