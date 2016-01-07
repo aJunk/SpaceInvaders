@@ -25,6 +25,7 @@ time_t t;
 
 //serverside functions
 int launch_gameserver(int port);
+void gameloop(int gamesocket);
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
@@ -43,16 +44,11 @@ int max_y = 0, max_x = 0;
 
 int main(int argc, char **argv) {
 	int ret = 0;
-	int msgSize = -1;
 	int gamesocket, new_gamesocket;
 	int port = STD_PORT;
-	int loopCount = 0;					//count number of while-circles
-	int appearTime = 25;				//number of while-circles until new objects appear
-	int appearChance = 20;				//chance that an object appears at a position
-	socklen_t addrLength;
 	struct sockaddr_in address;
-
-	screen_init();
+	socklen_t addrLength = sizeof(address);
+	int pid = 0;
 
 	// Check arguments
 	if(argc > 2){
@@ -61,91 +57,108 @@ int main(int argc, char **argv) {
 	}
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
 	
-	//Launch gameserver
+	// Launch gameserver
 	gamesocket = launch_gameserver(port);
 	if(gamesocket < 0) error_handler(gamesocket);
-	
+
+	// Get connections
 	while(1){
-		// Get next connection in queue
-		addrLength = sizeof(address);
 		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
 		if(new_gamesocket < 0) error_handler(-6);
 
-// GAME STARTS HERE ------------------------------------------------
-	//serverside-init -> start
-		//add attributes
-		server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-
-		//create objects on random positions
-		srand((unsigned) time(&t));
-		/*for(int i = 0; i < 15; i++){
-			place_object(0, 60);
-		}*/
-
-		//create some objects in lines
-		place_object(3, appearChance);
-
-	//serverside-init <- end
-//BEGIN MAIN LOOP-------------------------------------------------------------
-		while(1) {
-			//encode TCP package
-			handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
-
-			//transmit TCP package
-	//TODO: Calculate size of container to send
-			ret = send(new_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-			if(ret < 0){
-				free(server_data_exchange_container);
-				error_handler(-7);
-			}
-
-			//get TCP package
-			msgSize = recv(new_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
-			if(msgSize == 0){
-				free(server_data_exchange_container);
-				error_handler(-8);
-			}
-
-			//initiate shot & update player
-			if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
-			update_player(&s_player, s_obj, MX, MY);
-
-			//update shots
-			shoot(s_shots, NULL, s_obj);
-
-			//move objects
-			if (loopCount == appearTime){
-				move_object(1);
-				loopCount = 0;
-			}
-
-			//resizeterm(MY+2, MX+2);
-			clear();
-			wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-			//draw player
-			draw_player(&s_player);
-			//draw all objects
-			draw_obj(s_obj);
-			//draw shots
-			draw_shot(s_shots);
-			//simple frame-change indicator
-			frame_change();
-			refresh();
-
-			loopCount++;
+		// Create child process			basic structure by http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
+		pid = fork();
+		if(pid < 0) error_handler(-11);
+		
+		if (pid == 0){
+			close(gamesocket);
+			gameloop(new_gamesocket);
 		}
-// GAME ENDS HERE --------------------------------------------------
-
-	beep();
-	free(server_data_exchange_container);
-	endwin();
-
-	//disconnect from client
+		else close(new_gamesocket);
+	}
+	
+//TODO: EXIT STRATEGY
+	// Disconnect from client
 	ret = close(gamesocket);
 	if(ret < 0) error_handler(-9);
 	
-	return 0;
-  }
+	return 0;	
+}	
+
+void gameloop(int gamesocket){
+	int ret = 0;
+	int msgSize = -1;
+	int loopCount = 0;					//count number of while-circles
+	int appearTime = 25;				//number of while-circles until new objects appear
+	int appearChance = 20;				//chance that an object appears at a position
+		
+//SERVERSIDE INIT
+	screen_init();
+
+	//add attributes
+	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+
+	//create objects on random positions
+	srand((unsigned) time(&t));
+	/*for(int i = 0; i < 15; i++){
+		place_object(0, 60);
+	}*/
+
+	//create some objects in lines
+	place_object(3, appearChance);
+
+//BEGIN MAIN LOOP-------------------------------------------------------------
+	while(1) {
+		//encode TCP package
+		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
+
+		//transmit TCP package
+	//TODO: Calculate size of container to send
+		ret = send(gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		if(ret < 0){
+			free(server_data_exchange_container);
+			error_handler(-7);
+		}
+
+		//get TCP package
+		msgSize = recv(gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
+		if(msgSize == 0){
+			free(server_data_exchange_container);
+			error_handler(-8);
+		}
+
+		//initiate shot & update player
+		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
+		update_player(&s_player, s_obj, MX, MY);
+
+		//update shots
+		shoot(s_shots, NULL, s_obj);
+
+		//move objects
+		if (loopCount == appearTime){
+			move_object(1);
+			loopCount = 0;
+		}
+
+		//resizeterm(MY+2, MX+2);
+		clear();
+		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
+		//draw player
+		draw_player(&s_player);
+		//draw all objects
+		draw_obj(s_obj);
+		//draw shots
+		draw_shot(s_shots);
+		//simple frame-change indicator
+		frame_change();
+		refresh();
+
+		loopCount++;
+	}
+	beep();
+	free(server_data_exchange_container);
+	endwin();
+	return;
 }
 
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){

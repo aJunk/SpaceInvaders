@@ -24,6 +24,7 @@ void error_handler(int errno){
 	else if(errno == -7) perror("Error sending");
 	else if(errno == -8) perror("Error receiving, connection closed by client");
 	else if(errno == -9) perror("Error disconnecting from client");	
+	else if(errno == -11) perror("Error when forking");
 
 	else if(errno == -21) printf("ERROR: Invalid argument!\n\tUsage: client [-i <server ip>] [-p <server port>] [-n <player name>]\n");
 	else if(errno == -22) perror("Error connecting to server");
