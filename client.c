@@ -26,8 +26,8 @@ Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 WINDOW* fieldscr;
 WINDOW* statscr;
 
-
 //clientside functions
+int connect2server(char ip[16], int port);
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
 void draw_obj(Object obj[MX * MY]);
@@ -40,12 +40,10 @@ int main(int argc, char **argv) {
 	int msgSize = -1;
 	int gamesocket;
 	int port = STD_PORT;
-	struct sockaddr_in address;
 	char ip[16] = "127.0.0.1";
-
 	int ch;
-
-// Check arguments
+	
+	// Check arguments
 	for(int i = 1; i < argc; i = i+2){
 		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0){			//Check if a wrong flag is entered
 			printf("ERROR: Invalid argument!\n\tUsage: client [-i <server ip>] [-p <server port>] [-n <player name>]\n");
@@ -59,32 +57,14 @@ int main(int argc, char **argv) {
 		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
 		return EXIT_ERROR;
 	}
-
-// Fill in connection information
-	address.sin_family = AF_INET; 			//IPv4 protocol
-	address.sin_port = htons(port); 		//Port number htons converts byte order
-	ret = inet_aton(ip, &address.sin_addr);	//Convert address to bin
-
-// Create Socket	Address family: AF_INET: IPv4
-//					Socket type: SOCK_STREAM: Stream
-//					Protocol: 0: Standard to socket type
-	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (gamesocket < 0)
-	{
-		perror("Error creating socket!");
+	
+	//Connect
+	gamesocket = connect2server(ip, port);
+	if(gamesocket < 0){
+		if(gamesocket == -1) perror("Error creating socket");
+		else if(gamesocket == -2) perror("Error connecting to server");
 		return EXIT_ERROR;
 	}
-	printf("Client Socket created\n");
-
-// Connect to server
-	ret = connect(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0)
-	{
-		perror("Error connecting to server!");
-		return EXIT_ERROR;
-	}
-	printf("Connected to server.\n");
-
 
 // GAME STARTS HERE ------------------------------------------------
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
@@ -125,9 +105,9 @@ int main(int argc, char **argv) {
 		//GET TCP PACKAGE
 		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-		if(msgSize == 0)
-		{
-			perror("Error receiving, connection closed by client!");
+		if(msgSize == 0){
+			perror("Error receiving");
+			getc(stdin);
 			return EXIT_ERROR;
 		}
 
@@ -171,9 +151,9 @@ int main(int argc, char **argv) {
 	//TRANSMIT TCP PACKAGE
 		//c_player.instructions = 16;
 		ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-		if(ret < 0)
-		{
-			perror("Error sending!");
+		if(ret < 0){
+			perror("Error sending");
+			getc(stdin);
 			return EXIT_ERROR;
 		}
 		printf("%d\n", c_player.instructions);
@@ -186,11 +166,10 @@ int main(int argc, char **argv) {
   free(client_data_exchange_container);
   endwin();
 
-// Disconnect from server
+	// Disconnect from server
 	ret = close(gamesocket);
-	if(ret < 0)
-	{
-		perror("Error disconnecting from server!");
+	if(ret < 0){
+		perror("Error disconnecting from server");
 		return EXIT_ERROR;
 	}
 
@@ -291,7 +270,26 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
 				obj[index].status = NO_CHANGE;
       }
     }
-
   }
+}
 
+int connect2server(char ip[16], int port){
+	int gamesocket;
+	struct sockaddr_in address;
+	int ret = 0;
+	
+	// Fill in connection information
+	address.sin_family = AF_INET; 			//IPv4 protocol
+	address.sin_port = htons(port); 		//Port number htons converts byte order
+	ret = inet_aton(ip, &address.sin_addr);	//Convert address to bin
+
+	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
+	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
+	if(gamesocket < 0) return -1;
+
+	// Connect to server
+	ret = connect(gamesocket, (struct sockaddr*)&address, sizeof(address));
+	if(ret < 0) return -2;
+
+	return gamesocket;
 }

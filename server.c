@@ -24,6 +24,7 @@ char dir = 'r';		//direction objects move to
 time_t t;
 
 //serverside functions
+int launch_gameserver(int port);
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
@@ -48,8 +49,8 @@ int main(int argc, char **argv) {
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 25;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
-	struct sockaddr_in address;
 	socklen_t addrLength;
+	struct sockaddr_in address;
 
 	screen_init();
 
@@ -65,35 +66,16 @@ int main(int argc, char **argv) {
 		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
 		return EXIT_ERROR;
 	}
-
-	// Fill in connection information
-	address.sin_family = AF_INET;			//IPv4 protocol
-	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
-	address.sin_port = htons(port);		//Port number htons converts byte order
-
-	// Create Socket	Address family: AF_INET: IPv4
-	//					Socket type: SOCK_STREAM: Stream
-	//					Protocol: 0: Standard to socket type
-	gamesocket = socket (AF_INET, SOCK_STREAM, 0);
-	if (gamesocket == -1){
-		perror("Error creating socket!");
+	
+	//Launch gameserver
+	gamesocket = launch_gameserver(port);
+	if(gamesocket < 0){
+		if(gamesocket == -1) perror("Error creating socket");
+		else if(gamesocket == -2) perror("Error binding. Port not free");
+		else if(gamesocket == -3) perror("Error launching listener");
 		return EXIT_ERROR;
 	}
-
-	// Bind Socket to process
-	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0){
-		perror("Error binding! Port not free.");
-		return EXIT_ERROR;
-	}
-
-	// Make listener (queue) for new connections
-	ret = listen(gamesocket, 5);		//max. 5 connections
-	if(ret < 0){
-		perror("Error making listener!");
-		return EXIT_ERROR;
-	}
-
+	
 	while(1)
 	{
 		// Get next connection in queue
@@ -137,7 +119,7 @@ int main(int argc, char **argv) {
 			//get TCP package
 			msgSize = recv(new_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
 			if(msgSize == 0){
-				perror("Error receiving, connection closed by client!");
+				perror("Error receiving, connection closed by client");
 				free(server_data_exchange_container);
 				endwin();
 				return EXIT_ERROR;
@@ -180,7 +162,7 @@ int main(int argc, char **argv) {
 	//disconnect from client
 	ret = close(gamesocket);
 	if(ret < 0){
-		perror("Error disconnecting from client!");
+		perror("Error disconnecting from client");
 		return EXIT_ERROR;
 	}
 	return 0;
@@ -406,4 +388,29 @@ int get_empty_obj_num(int objn){
 		objn++;
 	}
 	return objn;
+}
+
+int launch_gameserver(int port){
+	int ret = 0;
+	int gamesocket = 0;
+	struct sockaddr_in address;
+	
+	// Fill in connection information
+	address.sin_family = AF_INET;			//IPv4 protocol
+	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
+	address.sin_port = htons(port);			//Port number htons converts byte order
+
+	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
+	gamesocket = socket (AF_INET, SOCK_STREAM, 0);
+	if (gamesocket < 0) return -1;
+
+	// Bind Socket to process
+	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
+	if(ret < 0) return -2;
+
+	// Make listener (queue) for new connections
+	ret = listen(gamesocket, 5);		//max. 5 connections
+	if(ret < 0) return -3;
+	
+	return gamesocket;
 }
