@@ -55,15 +55,12 @@ int main(int argc, char **argv) {
 
 	// Check arguments
 	if(argc > 2){
-		if(strcmp(argv[1], "-p") == 0){
-			port = atoi(argv[2]);			//Convert string argument to int
-		}
+		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
 		else{
 			printf("ERROR: Invalid argument! Usage: server -p <port>\n");
 			return EXIT_ERROR;
 		}
 	}
-
 	if(port <= PORT_MIN || port >= PORT_MAX){
 		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
 		return EXIT_ERROR;
@@ -114,24 +111,12 @@ int main(int argc, char **argv) {
 
 		//create objects on random positions
 		srand((unsigned) time(&t));
-		/*
-		for(int i = 0; i < 10; i++){
-			s_obj[i].pos[0] = rand() % MX;
-			s_obj[i].pos[1] = rand() % MY;
-			s_obj[i].life = rand() % 4;
-			s_obj[i].status = UPDATED;
-		}
-		*/
-		/*for(int i = 0; i < 15; i++){	//WHY NOT WORKING?
-			place_object(0, 100);
+		/*for(int i = 0; i < 15; i++){
+			place_object(0, 60);
 		}*/
 
 		//create some objects in lines
-		//place_object(3, appearChance);
-		place_object(0, 0);
-		place_object(0, 0);
-		place_object(0, 0);
-		place_object(0, 0);
+		place_object(3, appearChance);
 
 	//serverside-init <- end
 //BEGIN MAIN LOOP-------------------------------------------------------------
@@ -393,7 +378,7 @@ void move_object(uint8_t type){
 void place_object(int lines, int appearChance){
 	int objn = 0;
 
-	if(lines == 0){
+	if(lines == 0 && (rand() % 100) < appearChance){
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
 		s_obj[objn].pos[1] = rand() % MY;
@@ -417,14 +402,6 @@ void place_object(int lines, int appearChance){
 }
 
 int get_empty_obj_num(int objn){
-	/*while (1) {
-		if(s_obj[objn].life <= 0){
-			return objn;
-		}
-		else {
-			objn++;
-		}
-	}*/
 	while(s_obj[objn].life > 0){		//search for dead objects
 		objn++;
 	}

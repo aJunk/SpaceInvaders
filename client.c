@@ -43,38 +43,19 @@ int main(int argc, char **argv) {
 	struct sockaddr_in address;
 	char ip[16] = "127.0.0.1";
 
-	int max_y = 0, max_x = 0;
 	int ch;
 
-
 // Check arguments
-	if(argc > 1)
-	{
-		if(strcmp(argv[1], "-i") == 0) strcpy(ip, argv[2]);
-		else if (strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);		//Convert string argument to int
-		else if (strcmp(argv[1], "-n") == 0) ret = 5;
-		else ret = 99;
+	for(int i = 1; i < argc; i = i+2){
+		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0){			//Check if a wrong flag is entered
+			printf("ERROR: Invalid argument!\n\tUsage: client [-i <server ip>] [-p <server port>] [-n <player name>]\n");
+			return EXIT_ERROR;
+		}
+		if(strcmp(argv[i], "-i") == 0 && i+1 < argc) strcpy(ip, argv[i+1]);
+		if(strcmp(argv[i], "-p") == 0 && i+1 < argc) port = atoi(argv[i+1]);			//Convert string argument to int
+		if(strcmp(argv[i], "-n") == 0 && i+1 < argc) ret = 5;
 	}
-	if(argc > 3)
-	{
-		if (strcmp(argv[3], "-p") == 0) port = atoi(argv[4]);
-		else if (strcmp(argv[3], "-n") == 0) ret = 5;
-		else ret = 99;
-	}
-	if(argc > 5)
-	{
-		if (strcmp(argv[5], "-n") == 0) ret = 5;
-		else ret = 99;
-	}
-
-	if(ret == 99)
-	{
-		printf("ERROR: Invalid argument! Usage: client [-i <server ip>] [-p <server port>] [-n <player name>]\n");
-		return EXIT_ERROR;
-	}
-
-	if(port <= PORT_MIN || port >= PORT_MAX)
-	{
+	if(port <= PORT_MIN || port >= PORT_MAX){
 		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
 		return EXIT_ERROR;
 	}
