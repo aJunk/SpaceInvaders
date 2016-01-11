@@ -127,11 +127,11 @@ int main(int argc, char **argv) {
 		}*/
 
 		//create some objects in lines
-		//place_object(3, appearChance);
-		place_object(0, 0);
-		place_object(0, 0);
-		place_object(0, 0);
-		place_object(0, 0);
+		place_object(3, appearChance);
+		//place_object(0, 0);
+		//place_object(0, 0);
+		//place_object(0, 0);
+		//place_object(0, 0);
 
 	//serverside-init <- end
 //BEGIN MAIN LOOP-------------------------------------------------------------

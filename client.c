@@ -144,9 +144,10 @@ int main(int argc, char **argv) {
 		//GET TCP PACKAGE
 		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-		if(msgSize == 0)
+		if(msgSize <= 0)
 		{
 			perror("Error receiving, connection closed by client!");
+			exit(-1);
 			return EXIT_ERROR;
 		}
 
@@ -171,6 +172,9 @@ int main(int argc, char **argv) {
 
 		wrefresh(fieldscr);
 
+		draw_player(&c_player);
+		draw_obj(c_obj);
+		draw_shot(c_shots);
 
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
@@ -256,7 +260,7 @@ void init_shot(Player *_player, int input){
 void draw_obj(Object _obj[MX * MY]){
   wattron( fieldscr, COLOR_PAIR(obj_colour));
 
-  for(int i = 0; i < MX * MY; i++)if(_obj[i].life > 0)mvwprintw(fieldscr, _obj[i].pos[1] + 1, _obj[i].pos[0] + 1, "X");
+  for(int i = 0; i < MX * MY; i++)if(_obj[i].life > 0)mvwaddch(fieldscr, _obj[i].pos[1] + 1, _obj[i].pos[0] + 1, 'X');
 
   wattron( fieldscr, COLOR_PAIR(bkg_colour));
 }
@@ -264,23 +268,23 @@ void draw_obj(Object _obj[MX * MY]){
 void draw_player(Player *_player){
   wattron( fieldscr, COLOR_PAIR(player_colour));
 
-  mvwprintw(fieldscr, _player->pos[1] + 1, _player->pos[0] + 1, "o");
+  mvwaddch(fieldscr, _player->pos[1] + 1, _player->pos[0] + 1, 'o');
 
   wattron( fieldscr, COLOR_PAIR(bkg_colour));
 }
 
 void draw_shot(Shot _shots[AMUNITION]){
-  if(_shots[0].active)mvwprintw(fieldscr, _shots[0].pos[1], _shots[0].pos[0] + 1,  "|");
+  if(_shots[0].active)mvwaddch(fieldscr, _shots[0].pos[1], _shots[0].pos[0] + 1,  '|');
 }
 
 void frame_change(){
   static char toggle = 0;
 
   if(toggle){
-    mvprintw(0, 0, "+");
+    mvwaddch(fieldscr, 0, 0, '+');
     toggle = 0;
   }else{
-    mvprintw(0, 0, "-");
+    mvwaddch(fieldscr, 0, 0, '-');
     toggle = 1;
   }
 }
