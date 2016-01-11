@@ -110,7 +110,7 @@ void gameloop(int gamesocket){
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 
-		usleep(70000);
+		usleep(20000);
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
