@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 		//c_player.instructions = 16;
 		ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 		if(ret < 0) error_handler(-7);
-		printf("%d\n", c_player.instructions);
+		//printf("%d\n", c_player.instructions);
 
 	//clientside <- end
 	}
@@ -164,19 +164,19 @@ void move_player(Player *_player, int input){
   switch (input){
     case KEY_RIGHT:
       _player->instructions |= RIGHT;
-			mvwprintw(statscr, 1,1,"RIGHT  ");
+			mvwaddstr(statscr, 1,1,"RIGHT  ");
       break;
     case KEY_LEFT:
       _player->instructions |= LEFT;
-			mvwprintw(statscr, 1,1,"LEFT  ");
+			mvwaddstr(statscr, 1,1,"LEFT  ");
       break;
     case KEY_UP:
       _player->instructions |= UP;
-			mvwprintw(statscr, 1,1,"UP    ");
+			mvwaddstr(statscr, 1,1,"UP    ");
       break;
     case KEY_DOWN:
       _player->instructions |= DOWN;
-			mvwprintw(statscr, 1,1,"DOWN  ");
+			mvwaddstr(statscr, 1,1,"DOWN  ");
       break;
     default:
 			mvwprintw(statscr, 1,1,"      ");
