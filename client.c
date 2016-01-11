@@ -96,7 +96,9 @@ int main(int argc, char **argv) {
 		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 
-		if(msgSize == 0) error_handler(-8);
+		if(msgSize <= 0) error_handler(-8);
+
+		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 		//DECODE TRANSMITTED PACKAGE
 		handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
@@ -106,10 +108,8 @@ int main(int argc, char **argv) {
 
 		//redraw screen
 
-		//wrefresh(statscr);
-
 		//wclear(fieldscr);
-		wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
+		//wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
 		//draw stuff
 		draw_player(&c_player, 'o');
 		draw_obj(c_obj, 'X');

@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 		else error_handler(-1);
 	}
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
-	
+
 	// Launch gameserver
 	gamesocket = launch_gameserver(port);
 	if(gamesocket < 0) error_handler(gamesocket);
@@ -69,21 +69,21 @@ int main(int argc, char **argv) {
 		// Create child process			basic structure by http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
 		pid = fork();
 		if(pid < 0) error_handler(-11);
-		
+
 		if (pid == 0){
 			close(gamesocket);
 			gameloop(new_gamesocket);
 		}
 		else close(new_gamesocket);
 	}
-	
+
 //TODO: EXIT STRATEGY
 	// Disconnect from client
 	ret = close(gamesocket);
 	if(ret < 0) error_handler(-9);
-	
-	return 0;	
-}	
+
+	return 0;
+}
 
 void gameloop(int gamesocket){
 	int ret = 0;
@@ -91,7 +91,7 @@ void gameloop(int gamesocket){
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 25;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
-		
+
 //SERVERSIDE INIT
 	screen_init();
 
@@ -109,6 +109,8 @@ void gameloop(int gamesocket){
 
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
+
+		usleep(70000);
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
@@ -122,7 +124,7 @@ void gameloop(int gamesocket){
 
 		//get TCP package
 		msgSize = recv(gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
-		if(msgSize == 0){
+		if(msgSize <= 0){
 			free(server_data_exchange_container);
 			error_handler(-8);
 		}
@@ -386,7 +388,7 @@ int launch_gameserver(int port){
 	int ret = 0;
 	int gamesocket = 0;
 	struct sockaddr_in address;
-	
+
 	// Fill in connection information
 	address.sin_family = AF_INET;			//IPv4 protocol
 	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
@@ -403,6 +405,6 @@ int launch_gameserver(int port){
 	// Make listener (queue) for new connections
 	ret = listen(gamesocket, NUM_CONNECTIONS);
 	if(ret < 0) return -5;
-	
+
 	return gamesocket;
 }
