@@ -107,46 +107,6 @@ void gameloop(int gamesocket){
 	//create some objects in lines
 	place_object(3, appearChance);
 
-<<<<<<< HEAD
-	while(1)
-	{
-		// Get next connection in queue
-		addrLength = sizeof(address);
-		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
-		if(new_gamesocket < 0){
-			perror("Error creating new socket!");
-			return EXIT_ERROR;
-		}
-
-// GAME STARTS HERE ------------------------------------------------
-	//serverside-init -> start
-		//add attributes
-		server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-
-		//create objects on random positions
-		srand((unsigned) time(&t));
-		/*
-		for(int i = 0; i < 10; i++){
-			s_obj[i].pos[0] = rand() % MX;
-			s_obj[i].pos[1] = rand() % MY;
-			s_obj[i].life = rand() % 4;
-			s_obj[i].status = UPDATED;
-		}
-		*/
-		/*for(int i = 0; i < 15; i++){	//WHY NOT WORKING?
-			place_object(0, 100);
-		}*/
-
-		//create some objects in lines
-		place_object(3, appearChance);
-		//place_object(0, 0);
-		//place_object(0, 0);
-		//place_object(0, 0);
-		//place_object(0, 0);
-
-	//serverside-init <- end
-=======
->>>>>>> efa1cde269a9df41831c0034344c1f0ef7834243
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 		//encode TCP package
