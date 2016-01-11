@@ -26,8 +26,8 @@ Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 WINDOW* fieldscr;
 WINDOW* statscr;
 
-
 //clientside functions
+int connect2server(char ip[16], int port);
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
 void draw_obj(Object obj[MX * MY]);
@@ -40,70 +40,21 @@ int main(int argc, char **argv) {
 	int msgSize = -1;
 	int gamesocket;
 	int port = STD_PORT;
-	struct sockaddr_in address;
 	char ip[16] = "127.0.0.1";
-
-	int max_y = 0, max_x = 0;
 	int ch;
 
-
-// Check arguments
-	if(argc > 1)
-	{
-		if(strcmp(argv[1], "-i") == 0) strcpy(ip, argv[2]);
-		else if (strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);		//Convert string argument to int
-		else if (strcmp(argv[1], "-n") == 0) ret = 5;
-		else ret = 99;
+	// Check arguments
+	for(int i = 1; i < argc; i = i+2){
+		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0) error_handler(-21);		//Check if a wrong flag is entered
+		if(strcmp(argv[i], "-i") == 0 && i+1 < argc) strcpy(ip, argv[i+1]);
+		if(strcmp(argv[i], "-p") == 0 && i+1 < argc) port = atoi(argv[i+1]);			//Convert string argument to int
+		if(strcmp(argv[i], "-n") == 0 && i+1 < argc) ret = 5;
 	}
-	if(argc > 3)
-	{
-		if (strcmp(argv[3], "-p") == 0) port = atoi(argv[4]);
-		else if (strcmp(argv[3], "-n") == 0) ret = 5;
-		else ret = 99;
-	}
-	if(argc > 5)
-	{
-		if (strcmp(argv[5], "-n") == 0) ret = 5;
-		else ret = 99;
-	}
+	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
 
-	if(ret == 99)
-	{
-		printf("ERROR: Invalid argument! Usage: client [-i <server ip>] [-p <server port>] [-n <player name>]\n");
-		return EXIT_ERROR;
-	}
-
-	if(port <= PORT_MIN || port >= PORT_MAX)
-	{
-		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
-		return EXIT_ERROR;
-	}
-
-// Fill in connection information
-	address.sin_family = AF_INET; 			//IPv4 protocol
-	address.sin_port = htons(port); 		//Port number htons converts byte order
-	ret = inet_aton(ip, &address.sin_addr);	//Convert address to bin
-
-// Create Socket	Address family: AF_INET: IPv4
-//					Socket type: SOCK_STREAM: Stream
-//					Protocol: 0: Standard to socket type
-	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (gamesocket < 0)
-	{
-		perror("Error creating socket!");
-		return EXIT_ERROR;
-	}
-	printf("Client Socket created\n");
-
-// Connect to server
-	ret = connect(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0)
-	{
-		perror("Error connecting to server!");
-		return EXIT_ERROR;
-	}
-	printf("Connected to server.\n");
-
+	//Connect
+	gamesocket = connect2server(ip, port);
+	if(gamesocket < 0) error_handler(gamesocket);
 
 // GAME STARTS HERE ------------------------------------------------
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
@@ -144,12 +95,8 @@ int main(int argc, char **argv) {
 		//GET TCP PACKAGE
 		memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-		if(msgSize <= 0)
-		{
-			perror("Error receiving, connection closed by client!");
-			exit(-1);
-			return EXIT_ERROR;
-		}
+
+		if(msgSize == 0) error_handler(-8);
 
 		//DECODE TRANSMITTED PACKAGE
 		handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
@@ -194,11 +141,7 @@ int main(int argc, char **argv) {
 	//TRANSMIT TCP PACKAGE
 		//c_player.instructions = 16;
 		ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-		if(ret < 0)
-		{
-			perror("Error sending!");
-			return EXIT_ERROR;
-		}
+		if(ret < 0) error_handler(-7);
 		printf("%d\n", c_player.instructions);
 
 	//clientside <- end
@@ -209,13 +152,9 @@ int main(int argc, char **argv) {
   free(client_data_exchange_container);
   endwin();
 
-// Disconnect from server
+	// Disconnect from server
 	ret = close(gamesocket);
-	if(ret < 0)
-	{
-		perror("Error disconnecting from server!");
-		return EXIT_ERROR;
-	}
+	if(ret < 0) error_handler(-29);
 
 	return 0;
 }
@@ -314,7 +253,26 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
 				obj[index].status = NO_CHANGE;
       }
     }
-
   }
+}
 
+int connect2server(char ip[16], int port){
+	int gamesocket;
+	struct sockaddr_in address;
+	int ret = 0;
+
+	// Fill in connection information
+	address.sin_family = AF_INET; 			//IPv4 protocol
+	address.sin_port = htons(port); 		//Port number htons converts byte order
+	ret = inet_aton(ip, &address.sin_addr);	//Convert address to bin
+
+	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
+	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
+	if(gamesocket < 0) return -3;
+
+	// Connect to server
+	ret = connect(gamesocket, (struct sockaddr*)&address, sizeof(address));
+	if(ret < 0) return -22;
+
+	return gamesocket;
 }

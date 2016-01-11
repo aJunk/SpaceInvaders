@@ -24,6 +24,8 @@ char dir = 'r';		//direction objects move to
 time_t t;
 
 //serverside functions
+int launch_gameserver(int port);
+void gameloop(int gamesocket);
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
@@ -42,61 +44,70 @@ int max_y = 0, max_x = 0;
 
 int main(int argc, char **argv) {
 	int ret = 0;
-	int msgSize = -1;
 	int gamesocket, new_gamesocket;
 	int port = STD_PORT;
-	int loopCount = 0;					//count number of while-circles
-	int appearTime = 25;				//number of while-circles until new objects appear
-	int appearChance = 20;				//chance that an object appears at a position
 	struct sockaddr_in address;
-	socklen_t addrLength;
-
-	screen_init();
+	socklen_t addrLength = sizeof(address);
+	int pid = 0;
 
 	// Check arguments
 	if(argc > 2){
-		if(strcmp(argv[1], "-p") == 0){
-			port = atoi(argv[2]);			//Convert string argument to int
+		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
+		else error_handler(-1);
+	}
+	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
+	
+	// Launch gameserver
+	gamesocket = launch_gameserver(port);
+	if(gamesocket < 0) error_handler(gamesocket);
+
+	// Get connections
+	while(1){
+		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
+		if(new_gamesocket < 0) error_handler(-6);
+
+		// Create child process			basic structure by http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
+		pid = fork();
+		if(pid < 0) error_handler(-11);
+		
+		if (pid == 0){
+			close(gamesocket);
+			gameloop(new_gamesocket);
 		}
-		else{
-			printf("ERROR: Invalid argument! Usage: server -p <port>\n");
-			return EXIT_ERROR;
-		}
+		else close(new_gamesocket);
 	}
+	
+//TODO: EXIT STRATEGY
+	// Disconnect from client
+	ret = close(gamesocket);
+	if(ret < 0) error_handler(-9);
+	
+	return 0;	
+}	
 
-	if(port <= PORT_MIN || port >= PORT_MAX){
-		printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX);
-		return EXIT_ERROR;
-	}
+void gameloop(int gamesocket){
+	int ret = 0;
+	int msgSize = -1;
+	int loopCount = 0;					//count number of while-circles
+	int appearTime = 25;				//number of while-circles until new objects appear
+	int appearChance = 20;				//chance that an object appears at a position
+		
+//SERVERSIDE INIT
+	screen_init();
 
-	// Fill in connection information
-	address.sin_family = AF_INET;			//IPv4 protocol
-	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
-	address.sin_port = htons(port);		//Port number htons converts byte order
+	//add attributes
+	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
-	// Create Socket	Address family: AF_INET: IPv4
-	//					Socket type: SOCK_STREAM: Stream
-	//					Protocol: 0: Standard to socket type
-	gamesocket = socket (AF_INET, SOCK_STREAM, 0);
-	if (gamesocket == -1){
-		perror("Error creating socket!");
-		return EXIT_ERROR;
-	}
+	//create objects on random positions
+	srand((unsigned) time(&t));
+	/*for(int i = 0; i < 15; i++){
+		place_object(0, 60);
+	}*/
 
-	// Bind Socket to process
-	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0){
-		perror("Error binding! Port not free.");
-		return EXIT_ERROR;
-	}
+	//create some objects in lines
+	place_object(3, appearChance);
 
-	// Make listener (queue) for new connections
-	ret = listen(gamesocket, 5);		//max. 5 connections
-	if(ret < 0){
-		perror("Error making listener!");
-		return EXIT_ERROR;
-	}
-
+<<<<<<< HEAD
 	while(1)
 	{
 		// Get next connection in queue
@@ -134,72 +145,60 @@ int main(int argc, char **argv) {
 		//place_object(0, 0);
 
 	//serverside-init <- end
+=======
+>>>>>>> efa1cde269a9df41831c0034344c1f0ef7834243
 //BEGIN MAIN LOOP-------------------------------------------------------------
-		while(1) {
-			//encode TCP package
-			handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
+	while(1) {
+		//encode TCP package
+		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
-			//transmit TCP package
+		//transmit TCP package
 	//TODO: Calculate size of container to send
-			ret = send(new_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-			if(ret < 0){
-				perror("Error sending!");
-				free(server_data_exchange_container);
-				endwin();
-				return EXIT_ERROR;
-			}
-
-			//get TCP package
-			msgSize = recv(new_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
-			if(msgSize == 0){
-				perror("Error receiving, connection closed by client!");
-				free(server_data_exchange_container);
-				endwin();
-				return EXIT_ERROR;
-			}
-
-			//initiate shot & update player
-			if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
-			update_player(&s_player, s_obj, MX, MY);
-
-			//update shots
-			shoot(s_shots, NULL, s_obj);
-
-			//move objects
-			if (loopCount == appearTime){
-				move_object(1);
-				loopCount = 0;
-			}
-
-			//resizeterm(MY+2, MX+2);
-			clear();
-			wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-			//draw player
-			draw_player(&s_player);
-			//draw all objects
-			draw_obj(s_obj);
-			//draw shots
-			draw_shot(s_shots);
-			//simple frame-change indicator
-			frame_change();
-			refresh();
-
-			loopCount++;
+		ret = send(gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		if(ret < 0){
+			free(server_data_exchange_container);
+			error_handler(-7);
 		}
-// GAME ENDS HERE --------------------------------------------------
 
+		//get TCP package
+		msgSize = recv(gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
+		if(msgSize == 0){
+			free(server_data_exchange_container);
+			error_handler(-8);
+		}
+
+		//initiate shot & update player
+		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
+		update_player(&s_player, s_obj, MX, MY);
+
+		//update shots
+		shoot(s_shots, NULL, s_obj);
+
+		//move objects
+		if (loopCount == appearTime){
+			move_object(1);
+			loopCount = 0;
+		}
+
+		//resizeterm(MY+2, MX+2);
+		clear();
+		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
+		//draw player
+		draw_player(&s_player);
+		//draw all objects
+		draw_obj(s_obj);
+		//draw shots
+		draw_shot(s_shots);
+		//simple frame-change indicator
+		frame_change();
+		refresh();
+
+		loopCount++;
+	}
 	beep();
 	free(server_data_exchange_container);
 	endwin();
-
-	//disconnect from client
-	ret = close(gamesocket);
-	if(ret < 0){
-		perror("Error disconnecting from client!");
-		return EXIT_ERROR;
-	}
-	return 0;
-  }
+	return;
 }
 
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
@@ -393,7 +392,7 @@ void move_object(uint8_t type){
 void place_object(int lines, int appearChance){
 	int objn = 0;
 
-	if(lines == 0){
+	if(lines == 0 && (rand() % 100) < appearChance){
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
 		s_obj[objn].pos[1] = rand() % MY;
@@ -417,16 +416,33 @@ void place_object(int lines, int appearChance){
 }
 
 int get_empty_obj_num(int objn){
-	/*while (1) {
-		if(s_obj[objn].life <= 0){
-			return objn;
-		}
-		else {
-			objn++;
-		}
-	}*/
 	while(s_obj[objn].life > 0){		//search for dead objects
 		objn++;
 	}
 	return objn;
+}
+
+int launch_gameserver(int port){
+	int ret = 0;
+	int gamesocket = 0;
+	struct sockaddr_in address;
+	
+	// Fill in connection information
+	address.sin_family = AF_INET;			//IPv4 protocol
+	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
+	address.sin_port = htons(port);			//Port number htons converts byte order
+
+	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
+	gamesocket = socket (AF_INET, SOCK_STREAM, 0);
+	if (gamesocket < 0) return -3;
+
+	// Bind Socket to process
+	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
+	if(ret < 0) return -4;
+
+	// Make listener (queue) for new connections
+	ret = listen(gamesocket, NUM_CONNECTIONS);
+	if(ret < 0) return -5;
+	
+	return gamesocket;
 }
