@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include "communication.h"
+#include "graphX.h"
 
 //server-variables
 Player s_player = {{0,0}, 0, 5, 1, 0};
@@ -33,12 +34,6 @@ int update_player(Player *_player, Object obj[MX * MY], uint16_t max_x, uint16_t
 void place_object(int lines, int appearChance);	//if lines == 0: object will appear at random xy-Position
 void move_object(uint8_t type);
 int get_empty_obj_num(int objn);
-
-void screen_init();
-void draw_obj(Object obj[MX * MY]);
-void draw_player(Player *_player);
-void draw_shot(Shot _shots[AMUNITION]);
-void frame_change();
 
 int max_y = 0, max_x = 0;
 
@@ -93,7 +88,7 @@ void gameloop(int gamesocket){
 	int appearChance = 20;				//chance that an object appears at a position
 
 //SERVERSIDE INIT
-	screen_init();
+	init_graphix();
 
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
@@ -110,7 +105,7 @@ void gameloop(int gamesocket){
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 
-		usleep(20000);
+		//usleep(DELAY);
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
@@ -121,6 +116,8 @@ void gameloop(int gamesocket){
 			free(server_data_exchange_container);
 			error_handler(-7);
 		}
+
+		//usleep(DELAY);
 
 		//get TCP package
 		msgSize = recv(gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
@@ -142,18 +139,18 @@ void gameloop(int gamesocket){
 			loopCount = 0;
 		}
 
-		//resizeterm(MY+2, MX+2);
-		clear();
-		wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-		//draw player
-		draw_player(&s_player);
-		//draw all objects
-		draw_obj(s_obj);
-		//draw shots
-		draw_shot(s_shots);
+		draw_player(&s_player, 'o');
+		draw_obj(s_obj, 'X');
+		draw_shot(s_shots, '|');
 		//simple frame-change indicator
 		frame_change();
-		refresh();
+
+		wrefresh(fieldscr);
+
+		draw_player(&s_player, ' ');
+		draw_obj(s_obj, ' ');
+		draw_shot(s_shots, ' ');
+
 
 		loopCount++;
 	}
@@ -243,59 +240,6 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
 
 
 //-------------------------------------------------
-void screen_init(){
-	initscr();
-	noecho();
-	cbreak();
-	keypad(stdscr, TRUE);
-	curs_set(FALSE);
-	timeout(0);
-	resizeterm(MY+2, MX+2);
-	getmaxyx(stdscr, max_y, max_x);
-	clear();
-
-	refresh();
-	wborder(stdscr, '|', '|', '-', '-', '+', '+', '+', '+');
-	// Global var `stdscr` is created by the call to `initscr()`
-
-	//init colors
-	start_color();			/* Start color 			*/
-	init_pair(obj_colour, COLOR_RED, COLOR_BLACK);
-	init_pair(bkg_colour, COLOR_GREEN, COLOR_BLACK);
-	init_pair(player_colour, COLOR_YELLOW, COLOR_BLACK);
-}
-
-void draw_obj(Object _obj[MX * MY]){
-  attron(COLOR_PAIR(obj_colour));
-
-  for(int i = 0; i < MX * MY; i++)if(_obj[i].life > 0)mvprintw(_obj[i].pos[1] + 1, _obj[i].pos[0] + 1, "X");
-
-  attron(COLOR_PAIR(bkg_colour));
-}
-
-void draw_player(Player *_player){
-  attron(COLOR_PAIR(player_colour));
-
-  mvprintw(_player->pos[1] + 1, _player->pos[0] + 1, "o");
-
-  attron(COLOR_PAIR(bkg_colour));
-}
-
-void draw_shot(Shot _shots[AMUNITION]){
-  if(_shots[0].active)mvprintw(_shots[0].pos[1], _shots[0].pos[0] + 1, "|");
-}
-
-void frame_change(){
-  static char toggle = 0;
-
-  if(toggle){
-    mvprintw(0, 0, "+");
-    toggle = 0;
-  }else{
-    mvprintw(0, 0, "-");
-    toggle = 1;
-  }
-}
 
 void move_object(uint8_t type){
 	int yOffset = 0;
@@ -358,7 +302,10 @@ void place_object(int lines, int appearChance){
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
 		s_obj[objn].pos[1] = rand() % MY;
-		s_obj[objn].life = (rand() % 3) +1;
+//choose how hard it should be!
+		//s_obj[objn].life = (rand() % 3) +1;
+		s_obj[objn].life = 1;
+
 		s_obj[objn].status = UPDATED;
 	}
 
