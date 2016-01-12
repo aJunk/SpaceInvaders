@@ -35,7 +35,7 @@ dynamic: clean havedirs
 	mv $(DYNLIBFILENAME).dylib $(LIBTARGETDIR)
 	cp $(DYNLIBFILENAME).h $(H_FILE_DIR)/$(DYNLIBFILENAME).h
 
-sc: server client
+all: server client audio
 
 run: all
 	clear
@@ -66,3 +66,7 @@ client_withsound: clean
 
 testrand: clean
 	gcc testrand.c -o test -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
+
+audio:
+	gcc audiodaemon.c -o adeamon -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES)
+	gcc audiosender.c -o asender -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES)

@@ -1,6 +1,7 @@
 #define _BSD_SOURCE
 #include <unistd.h>
 
+#include <errno.h>
 #include <ncurses.h>
 #include <stdlib.h>
 #include <time.h>
@@ -14,10 +15,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "communication.h"
 #include "graphX.h"
 
+int sound_queue;
 //client-variables
 Player c_player = {{0,0}, 0, 5, 1, 0};
 Object c_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
@@ -37,6 +41,8 @@ int main(int argc, char **argv) {
 	int port = STD_PORT;
 	char ip[16] = "127.0.0.1";
 	int ch;
+
+ sound_queue = open("S_QUEUE", O_RDWR);
 
 	// Check arguments
 	for(int i = 1; i < argc; i = i+2){
@@ -63,14 +69,18 @@ int main(int argc, char **argv) {
 
 		//GET TCP PACKAGE
 		//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 
-		if(msgSize <= 0) error_handler(-8);
+		if(msgSize <= 0){
+			if(errno != EWOULDBLOCK)error_handler(-8);
+		}
+
+
 
 		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 		//DECODE TRANSMITTED PACKAGE
-		handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
+		if(errno != EWOULDBLOCK) handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
 		//DECODE END!
 
 		c_player.instructions = 0;
@@ -105,7 +115,7 @@ int main(int argc, char **argv) {
 
 		if(ch == 'q') break;
 
-		wrefresh(statscr);
+		//wrefresh(statscr);
 
 	//TRANSMIT TCP PACKAGE
 		//c_player.instructions = 16;
@@ -158,7 +168,9 @@ void init_shot(Player *_player, int input){
   switch (input){
     case ' ':
       _player->instructions |= INIT_SHOT;
-			if(SOUND)system(PLAYME_SHOT);
+			if(SOUND){
+//pipe some sounds!
+			}
       break;
     default:
       break;
@@ -185,7 +197,15 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
         memcpy(&(obj[index]), c_tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
 
 				//look for destroied objects
-				if(obj[index].life <= 0 && obj[index].status == UPDATED && SOUND)system(PLAYME_EXPLOSION);
+				//if(obj[index].life <= 0 && obj[index].status == UPDATED && SOUND)system(PLAYME_EXPLOSION);
+				if(obj[index].life <= 0 && obj[index].status == UPDATED && SOUND){
+					if (sound_queue == -1) {
+			        beep();
+			    }else{
+							write(sound_queue, "hit", 4);
+					}
+
+				}
 
 				obj[index].status = NO_CHANGE;
       }
