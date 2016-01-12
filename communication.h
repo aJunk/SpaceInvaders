@@ -1,8 +1,9 @@
+#include <sys/types.h>
+#include <stdlib.h>
+
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
-#include <sys/types.h>
-#include <stdlib.h>
 
 #ifdef NOSOUND
 #define SOUND 0
