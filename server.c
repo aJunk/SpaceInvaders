@@ -111,7 +111,7 @@ void gameloop(int gamesocket){
 
 		//transmit TCP package
 	//TODO: Calculate size of container to send
-		ret = send(gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		ret = send(gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 		if(ret < 0){
 			free(server_data_exchange_container);
 			error_handler(-7);
