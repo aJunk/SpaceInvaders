@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 
 		//GET TCP PACKAGE
 		//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
+		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 
 		if(msgSize <= 0){
 			if(errno != EWOULDBLOCK)error_handler(-8);
