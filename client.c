@@ -75,8 +75,6 @@ int main(int argc, char **argv) {
 			if(errno != EWOULDBLOCK)error_handler(-8);
 		}
 
-
-
 		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 		//DECODE TRANSMITTED PACKAGE
