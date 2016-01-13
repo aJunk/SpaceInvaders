@@ -4,6 +4,8 @@
 
 WINDOW* fieldscr;
 WINDOW* statscr;
+WINDOW* scorescr;
+
 
 void draw_obj(Object _obj[MX * MY], char character){
   wattron( fieldscr, COLOR_PAIR(obj_colour));
@@ -41,8 +43,9 @@ void init_graphix(){
   initscr();
 
   //position screens...all positions from here on out are relative to local origins!
-  fieldscr = newwin(MY+2, MX+2, 0, 0);
-  statscr = newwin(STAT_MY , STAT_MX + 2, MY + 2, 0);
+  scorescr = newwin(SCORE_MY , SCORE_MX + 2, 0, 0);
+  fieldscr = newwin(MY+2, MX+2, SCORE_MY , 0);
+  statscr = newwin(STAT_MY , STAT_MX + 2, SCORE_MY + MY + 2, 0);
 
   noecho();
   cbreak();
@@ -61,12 +64,15 @@ void init_graphix(){
   wattron( fieldscr, COLOR_PAIR(gray_colour));
   for(int i = 0; i < MX; i++)mvwaddch(fieldscr, MY - HEIGHT_OF_PLAYER_SPACE, i, '-');
 
-  wattron( fieldscr, COLOR_PAIR(bkg_colour));
-  wattron( statscr, COLOR_PAIR(bkg_colour));
+  wattron(fieldscr, COLOR_PAIR(bkg_colour));
+  wattron(statscr, COLOR_PAIR(bkg_colour));
+  wattron(scorescr, COLOR_PAIR(obj_colour));
 
   wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
   wborder(statscr,  '|', '|', '-', '-', '+', '+', '+', '+');
+  wborder(scorescr, '|', '|', '-', '-', '+', '+', '+', '+');
 
+  wrefresh(scorescr);
   wrefresh(fieldscr);
   wrefresh(statscr);
 }

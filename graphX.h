@@ -7,6 +7,8 @@
 
 extern WINDOW* fieldscr;
 extern WINDOW* statscr;
+extern WINDOW* scorescr;
+
 
 void init_graphix();
 void frame_change();

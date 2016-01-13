@@ -62,6 +62,10 @@
 #define STAT_MX 50
 #define STAT_MY 3
 
+//SCORE-SCREEN width & height
+#define SCORE_MX 50
+#define SCORE_MY 3
+
 //modes for clearing windows
 #define LEAVE_BORDER 0
 #define NO_BORDER 1
