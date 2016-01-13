@@ -56,6 +56,10 @@ void init_graphix(){
   init_pair(obj_colour, COLOR_RED, COLOR_BLACK);
   init_pair(bkg_colour, COLOR_GREEN, COLOR_BLACK);
   init_pair(player_colour, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(gray_colour, COLOR_WHITE, COLOR_BLACK);
+
+  wattron( fieldscr, COLOR_PAIR(gray_colour));
+  for(int i = 0; i < MX; i++)mvwaddch(fieldscr, MY - HEIGHT_OF_PLAYER_SPACE, i, '-');
 
   wattron( fieldscr, COLOR_PAIR(bkg_colour));
   wattron( statscr, COLOR_PAIR(bkg_colour));

@@ -35,6 +35,7 @@
 #define bkg_colour 2
 #define obj_colour 1
 #define player_colour 3
+#define gray_colour 4
 
 #define DELAY 50000
 
@@ -72,6 +73,8 @@
 #define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(uint16_t) * MX * MY + sizeof(uint16_t) * 3
 
 #define PLAYER_NAME_LEN 10
+
+#define HEIGHT_OF_PLAYER_SPACE 3
 
 typedef struct{
     char name[PLAYER_NAME_LEN + 1];
