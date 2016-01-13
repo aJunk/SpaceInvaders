@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
@@ -100,6 +101,6 @@ typedef struct{
 
 //global functions
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
-void error_handler(int errno);
+void error_handler(int error_no);
 
 #endif
