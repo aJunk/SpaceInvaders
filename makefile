@@ -50,5 +50,8 @@ getdrmem:
 server:
 		gcc socket_server.c -o server -std=c99 -Wall -Wextra -pedantic -Wno-unused-parameter
 
+master_server: clean
+				gcc master_server.c -o master_server -std=c99 -Wall -Wextra -pedantic -Wno-unused-parameter
+
 client:
 		gcc socket_client.c -o client -std=c99 -D_BSD_SOURCE -Wall -Wextra -pedantic -Wno-unused-parameter

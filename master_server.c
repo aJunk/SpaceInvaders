@@ -1,13 +1,14 @@
 /* Siple program forking itselfe whenever SPACE is pressed and printing all active children to the screen.
  * Children die autmatically after 30 seconds.
  */
+#define _BSD_SOURCE
 
 #include <sys/wait.h>
-#include <unistd.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <time.h>
 
 #define MAXCHILD 10
 
@@ -22,11 +23,6 @@ int main(int argc, char *argv[])
     int i;
     pid_t memcpid[MAXCHILD]={0};  //stored child PIDs
 
-
-    if (argc != 2) {
-    fprintf(stderr, "Usage: %s <string>\n", argv[0]);
-    exit(EXIT_FAILURE);
-    }
 
     while(1){
       scanf("%c",&c);
@@ -54,7 +50,7 @@ int main(int argc, char *argv[])
               if (result == 0) {
                     printf("%d   PID:%d\n",i+1,memcpid[i]); // Child still alive
               } else if (result == -1) {
-                    perror("waitrpid");  //Error
+                    perror("waitrpid");  //Error -> Exit?
               } else {
                     numchild --;       // Child exited
                     memcpid[i]=0;
