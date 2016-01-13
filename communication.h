@@ -71,6 +71,13 @@
 //size of data eschange containers (needs to be known at pre-compilation-time)
 #define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(uint16_t) * MX * MY + sizeof(uint16_t) * 3
 
+#define PLAYER_NAME_LEN 10
+
+typedef struct{
+    char name[PLAYER_NAME_LEN + 1];
+    pid_t pid;
+    int port;
+}Client;
 
 typedef struct {
   char width;
