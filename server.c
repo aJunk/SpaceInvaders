@@ -15,7 +15,7 @@
 #include "graphX.h"
 
 //server-variables
-Player s_player = {{0,0}, 0, 5, 1, 0};
+Player s_player = {{0,0}, 0, 5, 0, 1, 0};
 Object s_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *server_data_exchange_container = NULL;
 char *server_res_buf = 0;
@@ -94,7 +94,7 @@ void gameloop(int gamesocket){
 	
 //SERVERSIDE INIT
 	init_graphix();
-	print_scorescr(playername);
+	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
 	
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);

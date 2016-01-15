@@ -22,7 +22,7 @@
 
 int sound_queue;
 //client-variables
-Player c_player = {{0,0}, 0, 5, 1, 0};
+Player c_player = {{0,0}, 0, 5, 0, 1, 0};
 Object c_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  init_graphix();
-	  print_scorescr(playername);
+	  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
 	  usleep(DELAY);
 
 //BEGIN MAIN LOOP-------------------------------------------------------------

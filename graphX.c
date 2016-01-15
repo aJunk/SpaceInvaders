@@ -66,18 +66,18 @@ void init_graphix(){
 
   wattron(fieldscr, COLOR_PAIR(bkg_colour));
   wattron(statscr, COLOR_PAIR(bkg_colour));
-  wattron(scorescr, COLOR_PAIR(obj_colour));
+  wattron(scorescr, COLOR_PAIR(bkg_colour));
 
-  wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
+  wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');	//left right top buttom tl tr bl br
   wborder(statscr,  '|', '|', '-', '-', '+', '+', '+', '+');
-  wborder(scorescr, '|', '|', '-', '-', '+', '+', '+', '+');
+  wborder(scorescr, ' ', ' ', '-', ' ', '+', '+', '|', '|');	//left and right border become corners (height = 2 rows)
 
   wrefresh(scorescr);
   wrefresh(fieldscr);
   wrefresh(statscr);
 }
 
-void print_scorescr(char playername[PLAYER_NAME_LEN + 1]){
-	mvwprintw(scorescr, 1, 1, "Player: %s", playername);
+void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t life, int spectators){
+	mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   |   Spectators %2d", playername, score, life, spectators);
 	wrefresh(scorescr);
 }

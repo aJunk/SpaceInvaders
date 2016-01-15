@@ -64,7 +64,7 @@
 
 //SCORE-SCREEN width & height
 #define SCORE_MX 50
-#define SCORE_MY 3
+#define SCORE_MY 2
 
 //modes for clearing windows
 #define LEAVE_BORDER 0
@@ -107,6 +107,7 @@ typedef struct {
   uint16_t pos[2];
   uint8_t modifier;
   int16_t life;
+  int16_t score;
   uint8_t amunition;
   uint8_t instructions;
 }Player;
