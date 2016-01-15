@@ -86,10 +86,16 @@ void gameloop(int gamesocket){
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 25;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
+	char playername[PLAYER_NAME_LEN + 1] = "";
 
+	//get playername from client
+	msgSize = recv(gamesocket, playername, sizeof(playername), 0);
+	if(msgSize <= 0) error_handler(-8);
+	
 //SERVERSIDE INIT
 	init_graphix();
-
+	print_scorescr(playername);
+	
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
@@ -342,7 +348,7 @@ int launch_gameserver(int port){
 	address.sin_port = htons(port);			//Port number htons converts byte order
 
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
-	gamesocket = socket (AF_INET, SOCK_STREAM, 0);
+	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (gamesocket < 0) return -3;
 
 	// Bind Socket to process

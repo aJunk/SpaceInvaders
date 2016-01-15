@@ -15,7 +15,6 @@ void frame_change();
 void draw_obj(Object obj[MX * MY], char character);
 void draw_player(Player *_player,  char character);
 void draw_shot(Shot _shots[AMUNITION], char character);
-
-
+void print_scorescr(char playername[PLAYER_NAME_LEN + 1]);
 
 #endif

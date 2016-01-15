@@ -5,7 +5,6 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <time.h>
-#include <string.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -40,16 +39,20 @@ int main(int argc, char **argv) {
 	int gamesocket;
 	int port = STD_PORT;
 	char ip[16] = "127.0.0.1";
+	char playername[PLAYER_NAME_LEN + 1] = "";
 	int ch;
 
  sound_queue = open("S_QUEUE", O_RDWR);
 
 	// Check arguments
 	for(int i = 1; i < argc; i = i+2){
-		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0) error_handler(-21);		//Check if a wrong flag is entered
+		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0) error_handler(-21);		//Check if a wrong flag was entered
 		if(strcmp(argv[i], "-i") == 0 && i+1 < argc) strcpy(ip, argv[i+1]);
 		if(strcmp(argv[i], "-p") == 0 && i+1 < argc) port = atoi(argv[i+1]);			//Convert string argument to int
-		if(strcmp(argv[i], "-n") == 0 && i+1 < argc) ret = 5;
+		if(strcmp(argv[i], "-n") == 0 && i+1 < argc){
+			if(strlen(argv[i+1]) <= PLAYER_NAME_LEN) strcpy(playername, argv[i+1]);			//Check if not too long
+			else error_handler(ERR_PLAYERNAME);
+		}
 	}
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
 
@@ -57,12 +60,17 @@ int main(int argc, char **argv) {
 	gamesocket = connect2server(ip, port);
 	if(gamesocket < 0) error_handler(gamesocket);
 
+	//Send playername to server
+	ret = send(gamesocket, playername, sizeof(playername), 0);
+	if(ret < 0) error_handler(-7);
+	
 // GAME STARTS HERE ------------------------------------------------
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-
 	  init_graphix();
-		usleep(DELAY);
+	  print_scorescr(playername);
+	  usleep(DELAY);
+
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 	//clientside -> start

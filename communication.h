@@ -80,6 +80,9 @@
 
 #define HEIGHT_OF_PLAYER_SPACE 3
 
+//ERRORS
+#define ERR_PLAYERNAME -23
+
 typedef struct{
     char name[PLAYER_NAME_LEN + 1];
     pid_t pid;

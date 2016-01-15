@@ -76,3 +76,8 @@ void init_graphix(){
   wrefresh(fieldscr);
   wrefresh(statscr);
 }
+
+void print_scorescr(char playername[PLAYER_NAME_LEN + 1]){
+	mvwprintw(scorescr, 1, 1, "Player: %s", playername);
+	wrefresh(scorescr);
+}
