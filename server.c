@@ -15,7 +15,7 @@
 #include "graphX.h"
 
 //server-variables
-Player s_player = {{0,0}, 0, 5, 0, 1, 0};
+Player s_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
 Object s_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *server_data_exchange_container = NULL;
 char *server_res_buf = 0;
@@ -32,7 +32,7 @@ int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
 int update_player(Player *_player, Object obj[MX * MY], uint16_t max_x, uint16_t max_y);
 void place_object(int lines, int appearChance);	//if lines == 0: object will appear at random xy-Position
-void move_object(uint8_t type);
+int move_object(uint8_t type);
 int get_empty_obj_num(int objn);
 
 int max_y = 0, max_x = 0;
@@ -95,7 +95,6 @@ void gameloop(int gamesocket){
 //SERVERSIDE INIT
 	init_graphix();
 	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
-	
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
@@ -110,7 +109,6 @@ void gameloop(int gamesocket){
 
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
-
 		//usleep(DELAY);
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
@@ -140,8 +138,9 @@ void gameloop(int gamesocket){
 		shoot(s_shots, NULL, s_obj);
 
 		//move objects
-		if (loopCount == appearTime){
-			move_object(1);
+		if(loopCount == appearTime){
+			ret = move_object(1);
+			if(ret == 1) usleep(300000000);
 			loopCount = 0;
 		}
 
@@ -156,8 +155,8 @@ void gameloop(int gamesocket){
 		draw_player(&s_player, ' ');
 		draw_obj(s_obj, ' ');
 		draw_shot(s_shots, ' ');
-
-
+		print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
+		
 		loopCount++;
 	}
 	beep();
@@ -172,19 +171,19 @@ void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
       _shots[i].active = 1;
       _shots[i].pos[0] = init_pos[0];
       _shots[i].pos[1] = init_pos[1];
-    }else if(_shots[i].active && obj != NULL){
-
-      if((_shots[i].pos[1] < 2)||test_for_collision_with_object(_shots[i].pos, obj, 0, 0)){
-          for(int o = 0; o < MX * MY; o++)if((obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1])){
-            obj[o].life--;
-            obj[o].status = UPDATED;
-          }
-        _shots[i].active = 0;
-      }else{
-        //mvprintw(_shots[i].pos[1], _shots[i].pos[0] + 1, "|");
-      }
-
-			_shots[i].pos[1] -= 1;
+    }
+	else if(_shots[i].active && obj != NULL){
+		if((_shots[i].pos[1] < 2) || test_for_collision_with_object(_shots[i].pos, obj, 0, 0)){
+			for(int o = 0; o < MX * MY; o++){
+				if((obj[o].life > 0) &&(obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1])){
+					obj[o].life--;
+					if(obj[o].life == 0) s_player.score += 50;
+					obj[o].status = UPDATED;
+				}
+				_shots[i].active = 0;
+			}
+		}
+	_shots[i].pos[1] -= 1;
     }
   }
 
@@ -213,7 +212,7 @@ int update_player(Player *_player,Object obj[MX * MY], uint16_t max_x, uint16_t 
     if(!test_for_collision_with_object(_player->pos, obj, -1, 0)) _player->pos[0]--;
   } else if ((_player->pos[1] < (max_y - 1))&&(_player->instructions & DOWN)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, 1)) _player->pos[1]++;
-  } else if((_player->pos[1]  > 0)&&(_player->instructions & UP)) {
+  } else if((_player->pos[1]  > MY - HEIGHT_OF_PLAYER_SPACE)&&(_player->instructions & UP)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, -1)) _player->pos[1]--;
   }
   return 0;
@@ -247,58 +246,49 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
 
 //-------------------------------------------------
 
-void move_object(uint8_t type){
+int move_object(uint8_t type){
 	int yOffset = 0;
-	int xOffset = 1;
+	int xOffset = 0;
 	int appearChance = 20;
+	int gameover = 0;
 
 	if(type == 1){
+		//set x-move direction
+		if(dir == 'r') xOffset = 1;		//move right
+		else xOffset = -1;				//move left
+		
 		//check if y-move is necessary
 		for(int i = 0; i < (MX*MY); i++){
-			if(s_obj[i].type == 1 && s_obj[i].life > 0){		//check if it is a wandering object
-				if(dir == 'r' && s_obj[i].pos[0]+1 >= MX){		//if wandering right would hit wall
+			if(s_obj[i].type == 1 && s_obj[i].life > 0){		//check if it is a wandering object still alive
+				if((dir == 'r' && s_obj[i].pos[0]+1 >= MX) || (dir == 'l' && s_obj[i].pos[0] <= 0)){		//if wandering right/left would hit wall
 					yOffset = 1;
-					xOffset = 0;
-					break;
-				}
-				else if(dir == 'l' && s_obj[i].pos[0] <= 0){	//if wandering left would hit wall
-					yOffset = 1;
-					xOffset = 0;
+					xOffset = 0;		//no x-move when y-move
 					break;
 				}
 			}
 		}
 
 		//wander right or left
-		if(dir == 'r'){
-			for(int i = 0; i < (MX*MY); i++){
-				if(s_obj[i].type == 1 && s_obj[i].life > 0){	//check if it is a wandering object
-					s_obj[i].pos[0] = s_obj[i].pos[0] + xOffset;
-					s_obj[i].pos[1] = s_obj[i].pos[1] + yOffset;
-					s_obj[i].status = UPDATED;
-				}
-			}
-		}
-		else if(dir == 'l'){
-			for(int i = 0; i < (MX*MY); i++){
-				if(s_obj[i].type == 1 && s_obj[i].life > 0){	//check if it is a wandering object
-					s_obj[i].pos[0] = s_obj[i].pos[0] - xOffset;
-					s_obj[i].pos[1] = s_obj[i].pos[1] + yOffset;
-					s_obj[i].status = UPDATED;
+		for(int i = 0; i < (MX*MY); i++){
+			if(s_obj[i].type == 1 && s_obj[i].life > 0){	//check if it is a wandering object still alive
+				s_obj[i].pos[0] = s_obj[i].pos[0] + xOffset;
+				s_obj[i].pos[1] = s_obj[i].pos[1] + yOffset;
+				s_obj[i].status = UPDATED;
+				if(s_obj[i].pos[1] > MY - HEIGHT_OF_PLAYER_SPACE - 2){		//check if a y-move would hit lower border
+					gameover = 1;
+					break;
 				}
 			}
 		}
 
+		//make new line of objects at top
 		if(yOffset == 1){
 			place_object(1, appearChance);
-			if(dir == 'l'){
-				dir = 'r';		//change direction for next time
-			}
-			else{
-				dir = 'l';
-			}
+			if(dir == 'r') dir = 'l';		//change direction for next time
+			else dir = 'r';
 		}
 	}
+	return gameover;
 }
 
 void place_object(int lines, int appearChance){
@@ -316,13 +306,15 @@ void place_object(int lines, int appearChance){
 	}
 
 	for(int i = 0; i < lines; i++){					//do it for given number of lines
-		for(int j = 3; j < (MX-3); j++){			//do it from 3rd position in row to 3rd-last position in row
+		for(int j = OBJ_LINE_L_OFFSET; j < (MX - OBJ_LINE_R_OFFSET); j++){			//do it from 3rd position in row to 3rd-last position in row
 			if((rand() % 100) < appearChance){
 				objn = get_empty_obj_num(objn);
 				s_obj[objn].pos[0] = j;
 				s_obj[objn].pos[1] = i;
 				s_obj[objn].type = 1;				//identify wandering objects
-				s_obj[objn].life = (rand() % 3) + 1;
+//choose how hard it should be!
+		//s_obj[objn].life = (rand() % 3) +1;
+				s_obj[objn].life = 1;
 				s_obj[objn].status = UPDATED;
 				objn++;
 			}

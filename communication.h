@@ -73,12 +73,16 @@
 //size of amunition array
 #define AMUNITION 1
 
-//size of data eschange containers (needs to be known at pre-compilation-time)
+//size of data exchange containers (needs to be known at pre-compilation-time)
 #define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(uint16_t) * MX * MY + sizeof(uint16_t) * 3
+
+//object lines
+#define OBJ_LINE_L_OFFSET 3
+#define OBJ_LINE_R_OFFSET 3
 
 #define PLAYER_NAME_LEN 10
 
-#define HEIGHT_OF_PLAYER_SPACE 3
+#define HEIGHT_OF_PLAYER_SPACE 2
 
 //ERRORS
 #define ERR_PLAYERNAME -23

@@ -22,7 +22,7 @@
 
 int sound_queue;
 //client-variables
-Player c_player = {{0,0}, 0, 5, 0, 1, 0};
+Player c_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
 Object c_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
 		draw_player(&c_player, ' ');
 		draw_obj(c_obj, ' ');
 		draw_shot(c_shots, ' ');
+		print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
 
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
