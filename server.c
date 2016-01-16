@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 		//creating new socket bound to any available port
 		new_socket = launch_gameserver(NEXT_AVAILABLE);
 		if(new_socket < 0) error_handler(new_socket);
-		//looking up the port the socet was bound to and sending it to the client.
+		//looking up the port the socket was bound to and sending it to the client.
 		uint16_t tmp_port = which_port(new_socket);
 		ret = send(new_client, &tmp_port, sizeof(uint16_t), 0);
 		//closing the connection (socket still open)
@@ -75,8 +75,7 @@ int main(int argc, char **argv) {
 		//socket can now be given to child!
 
 
-
-		// Create child process			basic structure by http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
+		// Create child process
 		pid = fork();
 		if(pid < 0) error_handler(-11);
 
@@ -172,7 +171,6 @@ void gameloop(int socket){
 			error_handler(-7);
 		}
 
-		//usleep(DELAY);
 
 		//get TCP package
 		msgSize = recv(client, &(s_player.instructions), sizeof(s_player.instructions), 0);
