@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
 	char ip[16] = "127.0.0.1";
 	char playername[PLAYER_NAME_LEN + 1] = "";
 	int ch;
+	int ret;
+	int msgSize;
 	int mode = 0;
 
 

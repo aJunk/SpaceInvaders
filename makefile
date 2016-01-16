@@ -58,7 +58,7 @@ server: clean
 		gcc graphX.c server.c s_c_func.c -o server -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
 
 client: clean
-	gcc graphX.c client.c s_c_func.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DNOSOUND -m32
+	gcc graphX.c client.c s_c_func.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DNOSOUND
 
 client_withsound: clean
 	gcc client.c s_c_func.c graphX.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DSOUND

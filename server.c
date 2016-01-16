@@ -172,7 +172,7 @@ void gameloop(int gamesocket,int player_gamesocket, char playername[]){
 			free(server_data_exchange_container);
 			endwin();
 			printf("GAME RESTARTET BY PLAYER\n");
-			gameloop(gamesocket);
+			gameloop( gamesocket, player_gamesocket, playername);
 			return;
 		}
 
