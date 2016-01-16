@@ -46,6 +46,7 @@ void init_graphix(){
   scorescr = newwin(SCORE_MY , SCORE_MX + 2, 0, 0);
   fieldscr = newwin(MY+2, MX+2, SCORE_MY , 0);
   statscr = newwin(STAT_MY , STAT_MX + 2, SCORE_MY + MY + 2, 0);
+  infoscr = newwin(INFO_MY , INFO_MX, SCORE_MY + MY/2 - INFO_MY/2, MX/2 - INFO_MX/2);
 
   noecho();
   cbreak();
@@ -67,6 +68,7 @@ void init_graphix(){
   wattron(fieldscr, COLOR_PAIR(bkg_colour));
   wattron(statscr, COLOR_PAIR(bkg_colour));
   wattron(scorescr, COLOR_PAIR(bkg_colour));
+  wattron(infoscr, COLOR_PAIR(obj_colour));
 
   wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');	//left right top buttom tl tr bl br
   wborder(statscr,  '|', '|', '-', '-', '+', '+', '+', '+');
@@ -82,19 +84,14 @@ void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t
 	wrefresh(scorescr);
 }
 
-void init_infoscr(){
-	infoscr = newwin(INFO_MY , INFO_MX, SCORE_MY + MY/2 - INFO_MY/2, MX/2 - INFO_MX/2);
-	wattron(infoscr, COLOR_PAIR(obj_colour));
-	wborder(infoscr, '|', '|', '-', '-', '+', '+', '+', '+'); 
-	wrefresh(infoscr);
-}
-
 //int disp_infoscr(char mode, int socket, Player *_player)
 int disp_infoscr(char mode){
 	int command = 0;
+		
+	//save actual fieldscreen
+	scr_dump("fieldscreen_dump");
 	
-	init_infoscr();
-	//dumb fieldscreen wborder - rest von init zu init
+	wborder(infoscr, '|', '|', '-', '-', '+', '+', '+', '+');
 	switch(mode){
 		case 'q': {		//quit
 			mvwprintw(infoscr, 1, 1, "Really quit game?");
@@ -136,8 +133,13 @@ int disp_infoscr(char mode){
 			}
 		default: break;
 	}
-	init_graphix();					//let infoscreen disappear again
-	//clear, wrefresh, restore fieldscreen
+	//Delete infoscreen
+	wclear(infoscr);
+	wrefresh(infoscr);
+	
+	//Restore fieldscreen
+	scr_restore("fieldcreen_dump");
+	
 	return command;
 }
 
