@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include "communication.h"
 
-void error_handler(int error_no){
+void error_handler(int error_no){	//ERRNO
 	endwin();
 	switch(error_no) {
 		case -1: printf("ERROR: Invalid argument!\n\tUsage: server -p <port>\n"); break;

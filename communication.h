@@ -33,12 +33,14 @@
 #define MAXSPECT 5        //max spectators per game
 #define NEWGAME 1         //client flag to start a new game
 #define EXIT_ERROR 1
+#define EXIT_SUCCESS 0
 
 //ncurses color functions
 #define bkg_colour 2
 #define obj_colour 1
 #define player_colour 3
 #define gray_colour 4
+#define obj_2_color 5
 
 #define DELAY 50000
 
@@ -48,6 +50,8 @@
 #define LEFT 32
 #define RIGHT 16
 #define INIT_SHOT 8
+#define QUIT 4
+#define RESTART 2
 //TODO: mask for request_pause/request_resume (same bit?), restart, quit game
 
 //Package handling flags
@@ -69,6 +73,10 @@
 #define SCORE_MX 50
 #define SCORE_MY 2
 
+//INFO-SCREEN width & height
+#define INFO_MX 30
+#define INFO_MY 6
+
 //modes for clearing windows
 #define LEAVE_BORDER 0
 #define NO_BORDER 1
@@ -76,16 +84,24 @@
 //size of amunition array
 #define AMUNITION 1
 
-//size of data eschange containers (needs to be known at pre-compilation-time)
+//size of data exchange containers (needs to be known at pre-compilation-time)
 #define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(uint16_t) * MX * MY + sizeof(uint16_t) * 3
+
+//object lines
+#define OBJ_LINE_L_OFFSET 3
+#define OBJ_LINE_R_OFFSET 3
 
 #define PLAYER_NAME_LEN 10
 
-#define HEIGHT_OF_PLAYER_SPACE 3
+#define HEIGHT_OF_PLAYER_SPACE 2
 
 
 //ERRORS
 #define ERR_PLAYERNAME -23
+
+//Special characters for non-standard objects
+#define OP_SHOT '$'
+#define POWER_UP 'U'
 
 typedef struct{
     char name[PLAYER_NAME_LEN + 1];
