@@ -96,7 +96,7 @@ void gameloop(int gamesocket){
 	s_player.pos[0] = MX/2;
 	s_player.pos[1] = MY-2;
 	s_player.modifier = 0;
-	s_player.life = 5;
+	s_player.life = 3;
 	s_player.score = 0;
 	s_player.amunition = 1;
 	s_player.instructions = 0;
@@ -171,7 +171,7 @@ void gameloop(int gamesocket){
 		//initiate shot & update player
 		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
 		ret = update_player(&s_player, s_obj, MX, MY);
-		if(ret == 1) s_player.life = 0;
+		if(ret == 1) s_player.life--;
 
 
 		//update shots
@@ -180,14 +180,14 @@ void gameloop(int gamesocket){
 		//move objects
 		if(loopCount == appearTime){
 			ret = move_object(1);
-			if(ret == 1) s_player.life = 0;			//set player-lifes to 0 --> let player know game over
+			if(ret == 1) s_player.life--;			//set player-lifes to 0 --> let player know game over
 			loopCount = 0;
 		}
 
 		//make falling objects faster than sideways moving ones!
 		if(loopCount%(appearTime/8) == (appearTime/8)-1){
 			ret = move_object(2);
-			if(ret == 1) s_player.life = 0;
+			if(ret == 1) s_player.life--;
 		}
 
 		draw_player(&s_player, 'o');
