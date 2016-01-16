@@ -170,7 +170,9 @@ void gameloop(int gamesocket){
 
 		//initiate shot & update player
 		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
-		update_player(&s_player, s_obj, MX, MY);
+		ret = update_player(&s_player, s_obj, MX, MY);
+		if(ret == 1) s_player.life = 0;
+
 
 		//update shots
 		shoot(s_shots, NULL, s_obj);
@@ -184,7 +186,8 @@ void gameloop(int gamesocket){
 
 		//make falling objects faster than sideways moving ones!
 		if(loopCount%(appearTime/8) == (appearTime/8)-1){
-			move_object(2);
+			ret = move_object(2);
+			if(ret == 1) s_player.life = 0;
 		}
 
 		draw_player(&s_player, 'o');
@@ -250,16 +253,22 @@ int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t
 
 int update_player(Player *_player,Object obj[MX * MY], uint16_t max_x, uint16_t max_y){
   //update player position
+	int gameover = 0;
+
   if ((_player->pos[0] < (max_x - 1))&&(_player->instructions & RIGHT)) {
     if(!test_for_collision_with_object(_player->pos, obj, 1, 0)) _player->pos[0]++;
+		else gameover = 1;
   } else if ((_player->pos[0]  > 0)&&(_player->instructions & LEFT)) {
     if(!test_for_collision_with_object(_player->pos, obj, -1, 0)) _player->pos[0]--;
+		else gameover = 1;
   } else if ((_player->pos[1] < (max_y - 1))&&(_player->instructions & DOWN)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, 1)) _player->pos[1]++;
+		else gameover = 1;
   } else if((_player->pos[1]  > MY - HEIGHT_OF_PLAYER_SPACE)&&(_player->instructions & UP)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, -1)) _player->pos[1]--;
+		else gameover = 1;
   }
-  return 0;
+  return gameover;
 }
 
 //GET FUNCTION TO EXTERNAL FILE
@@ -331,13 +340,18 @@ int move_object(uint8_t type){
 		//Randomly spawn an object 2
 		int shoot = rand() % 100;
 		int currMaxY = 0;
+		int currMinX = MX;
 		if(shoot > 70){
 			int o = get_empty_obj_num(0);
 
-			shoot = shoot % (MX + 1);
-			for(int i = 0; i < (MX*MY); i++)if(s_obj[i].type == 1 && s_obj[i].pos[0] == shoot)currMaxY++;
+			for(int i = 0; i < (MX*MY); i++){
+				if(abs(s_player.pos[0]-s_obj[i].pos[0]) < currMinX){
+					currMinX = s_player.pos[0]-s_obj[i].pos[0];
+					if(s_obj[i].pos[1] > currMaxY) currMaxY = s_obj[i].pos[1];
+				}
+			}
 
-			s_obj[o].pos[0] = shoot;
+			s_obj[o].pos[0] = s_player.pos[0] - currMinX;
 			s_obj[o].pos[1] = currMaxY + 1;
 			s_obj[o].life = 1;
 			s_obj[o].type = 2;
@@ -356,7 +370,10 @@ int move_object(uint8_t type){
 
 		for(int i = 0; i < (MX*MY); i++){
 			if(s_obj[i].type == 2 && s_obj[i].life > 0){		//check if it is a falling object and still alive
-				if(s_obj[i].pos[1] < MY){
+				if(test_for_collision(s_obj[i].pos, s_player.pos, 0, 1)){
+					s_obj[i].life = 0;
+					gameover = 1;
+				}else if(s_obj[i].pos[1] < MY ){
 					s_obj[i].pos[1]++;
 				}else {
 					s_obj[i].life = 0;
