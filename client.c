@@ -57,7 +57,36 @@ int main(int argc, char **argv) {
 	//Connect
 	gamesocket = connect2server(ip, port);
 	if(gamesocket < 0) error_handler(gamesocket);
-	
+
+/*
+	//TEST!!! -> works
+	int ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
+	uint8_t buf = 0;
+	int msgSize = recv(gamesocket, &buf , sizeof(uint8_t), 0);
+	printf("got: %d\n", buf);
+	close(gamesocket);
+	gamesocket = connect2server(ip, port);
+	if(gamesocket < 0) error_handler(gamesocket);
+	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
+	buf = 0;
+	msgSize = recv(gamesocket, &buf , sizeof(uint8_t), 0);
+	printf("got: %d\n", buf);
+	while(1);
+*/
+	uint16_t buf = 0;
+	int msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
+	printf("got Port: %d\n", buf);
+	close(gamesocket);
+
+	//Connect
+	gamesocket = connect2server(ip, buf);
+	if(gamesocket < 0) error_handler(gamesocket);
+
+	//final handshake
+ 	buf = 0;
+	msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
+	printf("got: %d\n", buf);
+
 	gameloop(gamesocket);
 	return 0;
 }
@@ -66,19 +95,19 @@ void gameloop(int gamesocket){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
-	
+
 	//Send playername to server
-	ret = send(gamesocket, playername, sizeof(playername), 0);
+	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
 	if(ret < 0) error_handler(-7);
 
-// GAME STARTS HERE ------------------------------------------------
+  // GAME STARTS HERE ------------------------------------------------
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  init_graphix();
 	  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
 	  usleep(DELAY);
 
-//BEGIN MAIN LOOP-------------------------------------------------------------
+  //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 	//clientside -> start
 
@@ -170,7 +199,7 @@ void gameloop(int gamesocket){
 
 	//clientside <- end
 	}
-// GAME ENDS HERE --------------------------------------------------
+  // GAME ENDS HERE --------------------------------------------------
 
   beep();
   free(client_data_exchange_container);
@@ -214,7 +243,7 @@ void init_shot(Player *_player, int input){
     case ' ':
       _player->instructions |= INIT_SHOT;
 			if(SOUND){
-//pipe some sounds!
+  //pipe some sounds!
 			}
       break;
     default:
@@ -223,7 +252,7 @@ void init_shot(Player *_player, int input){
 }
 
 
-//GET FUNCTION TO EXTERNAL FILE
+  //GET FUNCTION TO EXTERNAL FILE
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
 	if(mode == DISASSEMBLE){
     char *c_tmp = container;

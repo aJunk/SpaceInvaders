@@ -27,7 +27,7 @@ time_t currentTime;
 
 //serverside functions
 int launch_gameserver(int port);
-void gameloop(int gamesocket);
+void gameloop(int socket);
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
@@ -35,12 +35,13 @@ int update_player(Player *_player, Object obj[MX * MY], uint16_t max_x, uint16_t
 void place_object(int lines, int appearChance);	//if lines == 0: object will appear at random xy-Position
 int move_object(uint8_t type);
 int get_empty_obj_num(int objn);
+uint16_t which_port(int socket);
 
 int max_y = 0, max_x = 0;
 
 int main(int argc, char **argv) {
 	int ret = 0;
-	int gamesocket, new_gamesocket;
+	int gamesocket, new_client, new_socket;
 	int port = STD_PORT;
 	struct sockaddr_in address;
 	socklen_t addrLength = sizeof(address);
@@ -59,8 +60,21 @@ int main(int argc, char **argv) {
 
 	// Get connections
 	while(1){
-		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
-		if(new_gamesocket < 0) error_handler(-6);
+		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
+		if(new_client < 0) error_handler(-6);
+
+		//assuming player wants to start a new game and making a server for him
+		//creating new socket bound to any available port
+		new_socket = launch_gameserver(NEXT_AVAILABLE);
+		if(new_socket < 0) error_handler(new_socket);
+		//looking up the port the socet was bound to and sending it to the client.
+		uint16_t tmp_port = which_port(new_socket);
+		ret = send(new_client, &tmp_port, sizeof(uint16_t), 0);
+		//closing the connection (socket still open)
+		close(new_client);
+		//socket can now be given to child!
+
+
 
 		// Create child process			basic structure by http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
 		pid = fork();
@@ -68,9 +82,9 @@ int main(int argc, char **argv) {
 
 		if (pid == 0){
 			close(gamesocket);
-			gameloop(new_gamesocket);
+			gameloop(new_socket);
 		}
-		else close(new_gamesocket);
+		else close(new_client);
 	}
 
 //TODO: EXIT STRATEGY
@@ -81,13 +95,22 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void gameloop(int gamesocket){
+void gameloop(int socket){
 	int ret = 0;
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 20;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
 	char playername[PLAYER_NAME_LEN + 1] = "";
+
+	//waiting for client to connect!
+	int client = accept(socket, (struct sockaddr *) NULL, NULL);
+	if(client < 0) error_handler(-6);
+	//final handshake
+	uint16_t tmp_int = 22;
+	ret = send(client, &tmp_int, sizeof(uint16_t), 0);
+
+
 
 	server_data_exchange_container = NULL;
 	server_res_buf = 0;
@@ -115,10 +138,10 @@ void gameloop(int gamesocket){
 	}
 
 	//get playername from client
-	msgSize = recv(gamesocket, playername, sizeof(playername), 0);
+	msgSize = recv(client, playername, PLAYER_NAME_LEN + 1, 0);
 	if(msgSize <= 0) error_handler(-8);
 
-//SERVERSIDE INIT
+  //SERVERSIDE INIT
 	init_graphix();
 	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
 
@@ -134,7 +157,7 @@ void gameloop(int gamesocket){
 	//create some objects in lines
 	place_object(3, appearChance);
 
-//BEGIN MAIN LOOP-------------------------------------------------------------
+  //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 		time(&currentTime);
 		//usleep(DELAY);
@@ -143,7 +166,7 @@ void gameloop(int gamesocket){
 
 		//transmit TCP package
 	//TODO: Calculate size of container to send
-		ret = send(gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		ret = send(client, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		if(ret < 0){
 			free(server_data_exchange_container);
 			error_handler(-7);
@@ -152,7 +175,7 @@ void gameloop(int gamesocket){
 		//usleep(DELAY);
 
 		//get TCP package
-		msgSize = recv(gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
+		msgSize = recv(client, &(s_player.instructions), sizeof(s_player.instructions), 0);
 		if(msgSize <= 0){
 			free(server_data_exchange_container);
 			error_handler(-8);
@@ -164,7 +187,7 @@ void gameloop(int gamesocket){
 			free(server_data_exchange_container);
 			endwin();
 			printf("GAME RESTARTET BY PLAYER\n");
-			gameloop(gamesocket);
+			gameloop(socket);
 			return;
 		}
 
@@ -433,8 +456,8 @@ int launch_gameserver(int port){
 	// Fill in connection information
 	address.sin_family = AF_INET;			//IPv4 protocol
 	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
-	address.sin_port = htons(port);			//Port number htons converts byte order
-
+	if(port != NEXT_AVAILABLE)address.sin_port = htons(port);			//Port number htons converts byte order
+	else address.sin_port = 0;
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
 	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (gamesocket < 0) return -3;
@@ -448,4 +471,12 @@ int launch_gameserver(int port){
 	if(ret < 0) return -5;
 
 	return gamesocket;
+}
+
+uint16_t which_port(int socket){
+	struct sockaddr_in address;
+	socklen_t size = sizeof(address);
+	getsockname(socket, (struct sockaddr*)&address, &size);
+
+	return ntohs(address.sin_port);
 }

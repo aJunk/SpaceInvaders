@@ -99,6 +99,9 @@
 #define OP_SHOT '$'
 #define POWER_UP 'U'
 
+//Server port allocation
+#define NEXT_AVAILABLE 0
+
 typedef struct{
     char name[PLAYER_NAME_LEN + 1];
     pid_t pid;
