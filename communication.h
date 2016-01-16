@@ -37,6 +37,7 @@
 #define obj_colour 1
 #define player_colour 3
 #define gray_colour 4
+#define obj_2_color 5
 
 #define DELAY 50000
 
@@ -93,6 +94,10 @@
 
 //ERRORS
 #define ERR_PLAYERNAME -23
+
+//Special characters for non-standard objects
+#define OP_SHOT '$'
+#define POWER_UP 'U'
 
 typedef struct{
     char name[PLAYER_NAME_LEN + 1];

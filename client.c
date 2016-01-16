@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 	//Send playername to server
 	ret = send(gamesocket, playername, sizeof(playername), 0);
 	if(ret < 0) error_handler(-7);
-	
+
 // GAME STARTS HERE ------------------------------------------------
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
@@ -89,11 +89,11 @@ int main(int argc, char **argv) {
 			if(ret == 'y'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);				
+					if(ret < 0) error_handler(-7);
 				break;
 			}
 		}
-		
+
 		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 		//DECODE TRANSMITTED PACKAGE
@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 			if(ret == 'y'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);		
+					if(ret < 0) error_handler(-7);
 				continue;
 				break;
 			}
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 			}
 			else init_graphix();			//just redraw screen
 		}
-		
+
 		//wrefresh(statscr);
 
 	//TRANSMIT TCP PACKAGE

@@ -23,6 +23,7 @@ Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
 char dir = 'r';		//direction objects move to
 
 time_t t;
+time_t currentTime;
 
 //serverside functions
 int launch_gameserver(int port);
@@ -135,6 +136,7 @@ void gameloop(int gamesocket){
 
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
+		time(&currentTime);
 		//usleep(DELAY);
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
@@ -178,6 +180,11 @@ void gameloop(int gamesocket){
 			ret = move_object(1);
 			if(ret == 1) s_player.life = 0;			//set player-lifes to 0 --> let player know game over
 			loopCount = 0;
+		}
+
+		//make falling objects faster than sideways moving ones!
+		if(loopCount%(appearTime/8) == (appearTime/8)-1){
+			move_object(2);
 		}
 
 		draw_player(&s_player, 'o');
@@ -288,6 +295,7 @@ int move_object(uint8_t type){
 	int xOffset = 0;
 	int appearChance = 20;
 	int gameover = 0;
+	int max_y = 0;
 
 	if(type == 1){
 		//set x-move direction
@@ -315,8 +323,28 @@ int move_object(uint8_t type){
 					gameover = 1;
 					break;
 				}
+
+				if(s_obj[i].pos[1] > max_y) max_y = s_obj[i].pos[1];
 			}
 		}
+
+		//Randomly spawn an object 2
+		int shoot = rand() % 100;
+		int currMaxY = 0;
+		if(shoot > 70){
+			int o = get_empty_obj_num(0);
+
+			shoot = shoot % (MX + 1);
+			for(int i = 0; i < (MX*MY); i++)if(s_obj[i].type == 1 && s_obj[i].pos[0] == shoot)currMaxY++;
+
+			s_obj[o].pos[0] = shoot;
+			s_obj[o].pos[1] = currMaxY + 1;
+			s_obj[o].life = 1;
+			s_obj[o].type = 2;
+			s_obj[o].status = UPDATED;
+
+		}
+
 
 		//make new line of objects at top
 		if(yOffset == 1){
@@ -324,6 +352,19 @@ int move_object(uint8_t type){
 			if(dir == 'r') dir = 'l';		//change direction for next time
 			else dir = 'r';
 		}
+	}else if(type == 2){
+
+		for(int i = 0; i < (MX*MY); i++){
+			if(s_obj[i].type == 2 && s_obj[i].life > 0){		//check if it is a falling object and still alive
+				if(s_obj[i].pos[1] < MY){
+					s_obj[i].pos[1]++;
+				}else {
+					s_obj[i].life = 0;
+				}
+				s_obj[i].status = UPDATED;
+			}
+		}
+
 	}
 	return gameover;
 }
@@ -335,9 +376,10 @@ void place_object(int lines, int appearChance){
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
 		s_obj[objn].pos[1] = rand() % MY;
-//choose how hard it should be!
+		//choose how hard it should be!
 		//s_obj[objn].life = (rand() % 3) +1;
 		s_obj[objn].life = 1;
+		s_obj[objn].type = 1;
 
 		s_obj[objn].status = UPDATED;
 	}
@@ -349,7 +391,7 @@ void place_object(int lines, int appearChance){
 				s_obj[objn].pos[0] = j;
 				s_obj[objn].pos[1] = i;
 				s_obj[objn].type = 1;				//identify wandering objects
-//choose how hard it should be!
+				//choose how hard it should be!
 		//s_obj[objn].life = (rand() % 3) +1;
 				s_obj[objn].life = 1;
 				s_obj[objn].status = UPDATED;
