@@ -66,6 +66,7 @@ void gameloop(int gamesocket){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
+	client_data_exchange_container = NULL;
 	
 	//Send playername to server
 	ret = send(gamesocket, playername, sizeof(playername), 0);
@@ -93,11 +94,19 @@ void gameloop(int gamesocket){
 		//Look if player is game over
 		if(((Player*)client_data_exchange_container)->life == 0){
 			ret = disp_infoscr('g');
-			if(ret == 'y'){					//really exit
+			if(ret == 'q'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);				
+					if(ret < 0) error_handler(-7);			
 				break;
+			}
+			else if(ret == 'r'){
+				c_player.instructions |= RESTART;
+				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
+					if(ret < 0) error_handler(-7);
+				free(client_data_exchange_container);
+				gameloop(gamesocket);
+				return;
 			}
 		}
 		
@@ -138,28 +147,28 @@ void gameloop(int gamesocket){
 
 		init_shot(&c_player, ch);
 
-		if(ch == 'q'){						//quit game
-			ret = disp_infoscr(ch);
-			if(ret == 'y'){					//really exit
+		if(ch == 'q'){							//quit game
+			ret = disp_infoscr('q');
+			if(ret == 'y'){						//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 					if(ret < 0) error_handler(-7);		
-				continue;
+				free(client_data_exchange_container);
+				gameloop(gamesocket);
 				break;
 			}
-			else init_graphix();			//just redraw screen
 		}
-		if(ch == 'p') disp_infoscr(ch);		//game paused
-		if(ch == 'r'){						//restart game
-			ret = disp_infoscr(ch);
-			if(ret == 'y'){			//really exit
+		else if(ch == 'p') disp_infoscr('p');		//game paused
+		else if(ch == 'r'){						//restart game
+			ret = disp_infoscr('r');
+			if(ret == 'y'){					//really restart
 				c_player.instructions |= RESTART;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 					if(ret < 0) error_handler(-7);
-				continue;
-		//TODO: add function to restart gameloop
+				free(client_data_exchange_container);
+				gameloop(gamesocket);
+				return;
 			}
-			else init_graphix();			//just redraw screen
 		}
 		
 		//wrefresh(statscr);
@@ -278,3 +287,5 @@ int connect2server(char ip[16], int port){
 
 	return gamesocket;
 }
+
+

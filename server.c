@@ -84,7 +84,7 @@ void gameloop(int gamesocket){
 	int ret = 0;
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
-	int appearTime = 20;				//number of while-circles until new objects appear
+	int appearTime = 2;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
 	char playername[PLAYER_NAME_LEN + 1] = "";
 
@@ -100,9 +100,11 @@ void gameloop(int gamesocket){
 	s_player.amunition = 1;
 	s_player.instructions = 0;
 
-	s_shots[0].pos[0] = 0;
-	s_shots[0].pos[1] = 0;
-	s_shots[0].active = 0;
+	for(int i = 0; i < AMUNITION; i++){
+		s_shots[0].pos[0] = 0;
+		s_shots[0].pos[1] = 0;
+		s_shots[0].active = 0;
+	}
 
 	for(int i = 0; i < MX*MY; i++){
 		s_obj[i].pos[0] = 0;

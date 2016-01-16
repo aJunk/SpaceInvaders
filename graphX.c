@@ -126,9 +126,8 @@ int disp_infoscr(char mode){
 			mvwprintw(infoscr, 3, 1, "      [q] to quit");
 			wrefresh(infoscr);
 			command = wgetch(infoscr);
-			if(command == 'r') disp_infoscr(command);			//restart game
-			else if(command == 'q') command = disp_infoscr(command);		//exit
-			else disp_infoscr('g');		//wrong command - display again
+			if(command == 'r' || command == 'q') break;				//restart game or exit - handled in main loop
+			else command = disp_infoscr('g');						//wrong command - display again
 			break;
 			}
 		default: break;
