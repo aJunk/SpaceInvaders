@@ -39,11 +39,6 @@ int main(int argc, char **argv) {
 	int gamesocket;
 	int port = STD_PORT;
 	char ip[16] = "127.0.0.1";
-	char playername[PLAYER_NAME_LEN + 1] = "";
-	int ret;
-	int msgSize;
-	int mode = 0;
-
 
  sound_queue = open("S_QUEUE", O_RDWR);
 
@@ -62,40 +57,7 @@ int main(int argc, char **argv) {
 	//Connect
 	gamesocket = connect2server(ip, port);
 	if(gamesocket < 0) error_handler(gamesocket);
-
-  // Send gamemode (new game/ spectator)
-	if(strlen(playername) != 0){ //wants to start a new game
-		mode = NEWGAME;
-		ret = send(gamesocket, &mode, sizeof(int), 0);
-		printf("sent mode: %d\n", mode);
-		if(ret < 0) error_handler(-7);
-		msgSize = recv(gamesocket, &port, sizeof(int), 0);
-		printf("received: %d\n", msgSize);						//TODO:  sizeof correct?
-		if(msgSize <= 0) error_handler(-8);
-		close(gamesocket);
-		gamesocket = connect2server(ip, port);
-		//Send playername to server
-		ret = send(gamesocket, playername,PLAYER_NAME_LEN+1, 0);
-		if(ret < 0) error_handler(-7);
-
-	}
-	else{ //wants to become a spectator
-		ret = send(gamesocket, &mode, sizeof(int), 0);
-		if(ret < 0) error_handler(-7);
-		//msgSize = recv(gamesocket, XX, XX), 0);						//recive struct with ongoing games
-		close(gamesocket);
-		/*
-		 * ask user which game (set port)
-		 */
-		gamesocket = connect2server(ip, port);
-		if(gamesocket < 0) error_handler(gamesocket);
-		/*
-		 * adapt code for spectator
-		 */
-		exit(EXIT_SUCCESS);
-	}
-
-
+	
 	gameloop(gamesocket);
 	return 0;
 }
@@ -104,11 +66,9 @@ void gameloop(int gamesocket){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
-
-	client_data_exchange_container = NULL;
-
+	
 	//Send playername to server
-	ret = send(gamesocket, playername, PLAYER_NAME_LEN+1, 0);
+	ret = send(gamesocket, playername, sizeof(playername), 0);
 	if(ret < 0) error_handler(-7);
 
 // GAME STARTS HERE ------------------------------------------------
@@ -124,32 +84,22 @@ void gameloop(int gamesocket){
 
 		//GET TCP PACKAGE
 		//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-		while((msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0)) == 0);
+		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 
 		if(msgSize <= 0){
 			if(errno != EWOULDBLOCK)error_handler(-8);
 		}
 
 		//Look if player is game over
-
 		if(((Player*)client_data_exchange_container)->life == 0){
 			ret = disp_infoscr('g');
-			if(ret == 'q'){					//really exit
+			if(ret == 'y'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 					if(ret < 0) error_handler(-7);
 				break;
 			}
-			else if(ret == 'r'){
-				c_player.instructions |= RESTART;
-				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);
-				free(client_data_exchange_container);
-				gameloop(gamesocket);
-				return;
-			}
 		}
-
 
 		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
@@ -188,28 +138,28 @@ void gameloop(int gamesocket){
 
 		init_shot(&c_player, ch);
 
-		if(ch == 'q'){							//quit game
-			ret = disp_infoscr('q');
-			if(ret == 'y'){						//really exit
+		if(ch == 'q'){						//quit game
+			ret = disp_infoscr(ch);
+			if(ret == 'y'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 					if(ret < 0) error_handler(-7);
-				free(client_data_exchange_container);
-				gameloop(gamesocket);
+				continue;
 				break;
 			}
+			else init_graphix();			//just redraw screen
 		}
-		else if(ch == 'p') disp_infoscr('p');		//game paused
-		else if(ch == 'r'){						//restart game
-			ret = disp_infoscr('r');
-			if(ret == 'y'){					//really restart
+		if(ch == 'p') disp_infoscr(ch);		//game paused
+		if(ch == 'r'){						//restart game
+			ret = disp_infoscr(ch);
+			if(ret == 'y'){			//really exit
 				c_player.instructions |= RESTART;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 					if(ret < 0) error_handler(-7);
-				free(client_data_exchange_container);
-				gameloop(gamesocket);
-				return;
+				continue;
+		//TODO: add function to restart gameloop
 			}
+			else init_graphix();			//just redraw screen
 		}
 
 		//wrefresh(statscr);
