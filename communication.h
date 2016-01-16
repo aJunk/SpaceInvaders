@@ -28,7 +28,10 @@
 #define PORT_MIN 1024
 #define PORT_MAX 65535
 #define STD_PORT 4657
-#define NUM_CONNECTIONS 5
+#define NUM_CONNECTIONS 5 //max connections for listen
+#define MAXGAMES 5        //max parallel games
+#define MAXSPECT 5        //max spectators per game
+#define NEWGAME 1         //client flag to start a new game
 #define EXIT_ERROR 1
 
 //ncurses color functions
@@ -80,6 +83,7 @@
 
 #define HEIGHT_OF_PLAYER_SPACE 3
 
+
 //ERRORS
 #define ERR_PLAYERNAME -23
 
@@ -87,7 +91,7 @@ typedef struct{
     char name[PLAYER_NAME_LEN + 1];
     pid_t pid;
     int port;
-}Client;
+}Game;
 
 typedef struct {
   char width;

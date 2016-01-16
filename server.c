@@ -1,4 +1,5 @@
 #define _BSD_SOURCE
+
 #include <unistd.h>
 
 #include <ncurses.h>
@@ -6,6 +7,7 @@
 #include <time.h>
 #include <string.h>
 
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -13,6 +15,7 @@
 #include <stdio.h>
 #include "communication.h"
 #include "graphX.h"
+
 
 //server-variables
 Player s_player = {{0,0}, 0, 5, 0, 1, 0};
@@ -26,7 +29,9 @@ time_t t;
 
 //serverside functions
 int launch_gameserver(int port);
-void gameloop(int gamesocket);
+void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port);
+int check_alive (Game game_mem[]);
+void gameloop(int gamesocket,int player_gamesocket,char pname[]); //does not suport sectaors jet!!
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
@@ -39,11 +44,13 @@ int max_y = 0, max_x = 0;
 
 int main(int argc, char **argv) {
 	int ret = 0;
-	int gamesocket, new_gamesocket;
+	int mastersocket, comsocket;
 	int port = STD_PORT;
+	int mode;
+	int msgSize = 0 ;
 	struct sockaddr_in address;
 	socklen_t addrLength = sizeof(address);
-	int pid = 0;
+	Game game_mem[MAXGAMES]={{{""},0,0}};
 
 	// Check arguments
 	if(argc > 2){
@@ -52,50 +59,48 @@ int main(int argc, char **argv) {
 	}
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
 
-	// Launch gameserver
-	gamesocket = launch_gameserver(port);
-	if(gamesocket < 0) error_handler(gamesocket);
+	// Launch masterserver
+	mastersocket = launch_gameserver(port);
+	if(mastersocket < 0) error_handler(mastersocket);				//Errorhandler correct?
 
-	// Get connections
 	while(1){
-		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
-		if(new_gamesocket < 0) error_handler(-6);
+		// wait for connection
+		comsocket = accept(mastersocket, (struct sockaddr *) &address, &addrLength);
+		if(comsocket < 0) error_handler(-6);
 
-		// Create child process			basic structure by http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
-		pid = fork();
-		if(pid < 0) error_handler(-11);
+		msgSize = recv(comsocket, &mode, sizeof(int), 0);
+		if(msgSize <= 0)	error_handler(-8);
 
-		if (pid == 0){
-			close(gamesocket);
-			gameloop(new_gamesocket);
+		if(mode == NEWGAME){
+				make_new_game(game_mem, mastersocket, comsocket, port);
 		}
-		else close(new_gamesocket);
+		else{
+				if(check_alive(game_mem) < 1){ //no active games
+																																// ??
+				}
+				else{
+					ret = send(comsocket, game_mem, sizeof(game_mem), 0); // !! size?
+					if(ret < 0){
+						error_handler(-7);
+					}
+				}
+		}
 	}
-
-//TODO: EXIT STRATEGY
-	// Disconnect from client
-	ret = close(gamesocket);
-	if(ret < 0) error_handler(-9);
-
-	return 0;
 }
 
-void gameloop(int gamesocket){
+void gameloop(int gamesocket,int player_gamesocket, char playername[]){
 	int ret = 0;
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 25;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
-	char playername[PLAYER_NAME_LEN + 1] = "";
 
-	//get playername from client
-	msgSize = recv(gamesocket, playername, sizeof(playername), 0);
-	if(msgSize <= 0) error_handler(-8);
-	
+
+
 //SERVERSIDE INIT
 	init_graphix();
 	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
-	
+
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
@@ -117,7 +122,7 @@ void gameloop(int gamesocket){
 
 		//transmit TCP package
 	//TODO: Calculate size of container to send
-		ret = send(gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		ret = send(player_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		if(ret < 0){
 			free(server_data_exchange_container);
 			error_handler(-7);
@@ -126,7 +131,7 @@ void gameloop(int gamesocket){
 		//usleep(DELAY);
 
 		//get TCP package
-		msgSize = recv(gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
+		msgSize = recv(player_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
 		if(msgSize <= 0){
 			free(server_data_exchange_container);
 			error_handler(-8);
@@ -165,6 +170,9 @@ void gameloop(int gamesocket){
 	endwin();
 	return;
 }
+/*
+ * TODO: check for spectators, add socket, give data to spectators
+ */
 
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
   for(int i = 0; i < AMUNITION; i++){
@@ -361,3 +369,118 @@ int launch_gameserver(int port){
 
 	return gamesocket;
 }
+
+
+/*TODO:
+				error_handler
+*/
+void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port){
+
+    pid_t cpid; //new child PID
+		char pname[PLAYER_NAME_LEN+1];
+		int msgSize = -1;
+    int i;
+		int ret=0;
+		int gamesocket,player_gamesocket;
+		int game_port;
+		int numgames;
+		struct sockaddr_in address;
+		socklen_t addrLength = sizeof(address);
+
+		//check which games are still active
+		numgames = check_alive(game_mem);
+		//check if MAXGAMES is already reached
+		if(numgames >= MAXGAMES){
+			//TODO inform client no more game possible
+
+			return;
+		}
+	  //find free port next to serverport
+		game_port = port;
+		int used;
+		do{
+			port++;
+			used = 0;
+			for(i = 0; i<MAXGAMES; i++) {
+	  		if(game_mem[i].port == game_port){
+					used = 1;
+					continue;
+				}
+			}
+  	}while(used != 0);
+		//start new gameserver
+		gamesocket = launch_gameserver(game_port);																//TODO: what if port is already used? retry?
+		if(gamesocket < 0) error_handler(gamesocket);
+		//send new port to client
+		ret = send(comsocket, &game_port, sizeof(int), 0);
+		if(ret < 0){
+			error_handler(-7);
+		}
+		//wait for connection
+ 		player_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
+ 		if(comsocket < 0) error_handler(-6);
+		//get playername from client
+		msgSize = recv(player_gamesocket, pname, sizeof(pname), 0);  							//TODO:  sizeof correct?
+		if(msgSize <= 0) error_handler(-8);
+		//fork process
+    cpid = fork();
+    if (cpid == -1) {       // fork failed
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    else if (cpid != 0) {    // I am a parent -> store connection
+				//go to next empty place
+        for(i=0; (i<MAXGAMES) && (game_mem[i].pid!=0); i++);
+				strcpy(game_mem[i].name,pname);
+				game_mem[i].pid = cpid;
+				game_mem[i].port = port;
+				close(comsocket);
+				close(gamesocket);
+				close(player_gamesocket);
+				return;
+    }
+    else {        					// I am a child -> start game, terminate unused connections
+				close(mastersocket);
+				close(comsocket);
+
+				gameloop(gamesocket,player_gamesocket,pname);
+        exit(EXIT_SUCCESS);
+    }
+}
+/*TODO:
+  -errorhandler
+	-retry if port is olready used?
+
+  EXIT STRATEGY
+	// Disconnect from client
+	ret = close(mastersocket);
+	if(ret < 0) error_handler(-9);
+
+	return 0;
+*/
+
+int check_alive (Game game_mem[]){
+
+  int status;
+  int numgames=0;
+  pid_t result;
+
+  for(int i=0; i<MAXGAMES; i++){
+      if(game_mem[i].pid != 0){
+          result = waitpid(game_mem[i].pid, &status, WNOHANG); //return imediately if process is still alive (Option WNOHANG)
+          if (result == 0) {
+                numgames ++;
+          }
+          else if (result == -1) {
+                perror("waitpid");  //Error -> Exit?
+          }
+          else {
+                game_mem[i].pid = 0;      // Child exited -> delete entry
+								game_mem[i].port = 0;
+								strcpy(game_mem[i].name, "");
+          }
+      }
+  }
+  return numgames;
+}
+//todo: errorhandler
