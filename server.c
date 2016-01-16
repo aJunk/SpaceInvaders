@@ -73,6 +73,8 @@ int main(int argc, char **argv) {
 		if(msgSize <= 0)	error_handler(-8);
 
 		if(mode == NEWGAME){
+				printf("client wants to start a ned game\n");
+				usleep(5000000);
 				make_new_game(game_mem, mastersocket, comsocket, port);
 		}
 		else{
@@ -80,12 +82,16 @@ int main(int argc, char **argv) {
 																																// ??
 				}
 				else{
-					ret = send(comsocket, game_mem, sizeof(game_mem), 0); // !! size?
+					/*ret = send(comsocket, game_mem, sizeof(game_mem), 0); // !! size?
 					if(ret < 0){
 						error_handler(-7);
-					}
+					} */
+
+					printf("client wants so become a spectator\n");
+					exit(EXIT_SUCCESS);
 				}
 		}
+
 	}
 }
 
