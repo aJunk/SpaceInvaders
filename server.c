@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
 	int msgSize;
 	int i;
 
+
 	// Check arguments
 	if(argc > 2){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
@@ -73,6 +74,10 @@ int main(int argc, char **argv) {
 		//get playername from client
 		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
 		if(msgSize <= 0) error_handler(-8);
+
+		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
+
+
 
 		if(strlen(playername) != 0){ //player wants to start a new game
 			//check if maximal number of games is already reached
@@ -108,8 +113,11 @@ int main(int argc, char **argv) {
 				game_mem[i].port = tmp_port;
 				close(new_client);
 			}
-		}
-		else{ //wants to become a spectator
+		}else{ //wants to become a spectator
+			//printf("MASTER >> ");
+			//printf("making new client spectator\n!");
+
+
 
 			//TODO:ask client which game he wants so view and give him the corresponding port
 

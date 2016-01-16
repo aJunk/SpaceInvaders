@@ -91,6 +91,8 @@
 #define OBJ_LINE_R_OFFSET 3
 
 #define PLAYER_NAME_LEN 10
+#define SPECTATOR 64
+#define ACTIVE_PLAYER 0
 
 #define HEIGHT_OF_PLAYER_SPACE 2
 
