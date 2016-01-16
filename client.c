@@ -67,8 +67,10 @@ int main(int argc, char **argv) {
 	if(strlen(playername) != 0){ //wants to start a new game
 		mode = NEWGAME;
 		ret = send(gamesocket, &mode, sizeof(int), 0);
+		printf("sent mode: %d\n", mode);
 		if(ret < 0) error_handler(-7);
-		msgSize = recv(gamesocket, &port, sizeof(int), 0); 							//TODO:  sizeof correct?
+		msgSize = recv(gamesocket, &port, sizeof(int), 0);
+		printf("received: %d\n", msgSize);						//TODO:  sizeof correct?
 		if(msgSize <= 0) error_handler(-8);
 		close(gamesocket);
 		gamesocket = connect2server(ip, port);
@@ -104,9 +106,9 @@ void gameloop(int gamesocket){
 	int ch;
 
 	client_data_exchange_container = NULL;
-	
+
 	//Send playername to server
-	ret = send(gamesocket, playername, sizeof(playername), 0);
+	ret = send(gamesocket, playername, PLAYER_NAME_LEN+1, 0);
 	if(ret < 0) error_handler(-7);
 
 // GAME STARTS HERE ------------------------------------------------
@@ -122,19 +124,20 @@ void gameloop(int gamesocket){
 
 		//GET TCP PACKAGE
 		//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		while((msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0)) == 0);
 
 		if(msgSize <= 0){
 			if(errno != EWOULDBLOCK)error_handler(-8);
 		}
 
 		//Look if player is game over
+
 		if(((Player*)client_data_exchange_container)->life == 0){
 			ret = disp_infoscr('g');
 			if(ret == 'q'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);			
+					if(ret < 0) error_handler(-7);
 				break;
 			}
 			else if(ret == 'r'){
@@ -146,6 +149,7 @@ void gameloop(int gamesocket){
 				return;
 			}
 		}
+
 
 		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
@@ -189,7 +193,7 @@ void gameloop(int gamesocket){
 			if(ret == 'y'){						//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);		
+					if(ret < 0) error_handler(-7);
 				free(client_data_exchange_container);
 				gameloop(gamesocket);
 				break;
@@ -324,5 +328,3 @@ int connect2server(char ip[16], int port){
 
 	return gamesocket;
 }
-
-

@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
 	socklen_t addrLength = sizeof(address);
 	Game game_mem[MAXGAMES]={{{""},0,0}};
 
+
 	// Check arguments
 	if(argc > 2){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
@@ -61,12 +62,13 @@ int main(int argc, char **argv) {
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
 
 	// Launch masterserver
+
 	mastersocket = launch_gameserver(port);
 	if(mastersocket < 0) error_handler(mastersocket);				//Errorhandler correct?
 
 	while(1){
 		// wait for connection
-		comsocket = accept(mastersocket, (struct sockaddr *) &address, &addrLength);
+		comsocket = accept(mastersocket, (struct sockaddr *) NULL, NULL);
 		if(comsocket < 0) error_handler(-6);
 
 		msgSize = recv(comsocket, &mode, sizeof(int), 0);
@@ -144,7 +146,7 @@ void gameloop(int gamesocket,int player_gamesocket, char playername[]){
 
 	//create some objects in lines
 	place_object(3, appearChance);
-
+usleep(1000000);
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 		time(&currentTime);
@@ -446,7 +448,7 @@ int launch_gameserver(int port){
 
 	// Fill in connection information
 	address.sin_family = AF_INET;			//IPv4 protocol
-	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
+	address.sin_addr.s_addr = htonl(INADDR_ANY); 	//Receive packets from any address
 	address.sin_port = htons(port);			//Port number htons converts byte order
 
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
@@ -481,6 +483,8 @@ void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port){
 		struct sockaddr_in address;
 		socklen_t addrLength = sizeof(address);
 
+
+
 		//check which games are still active
 		numgames = check_alive(game_mem);
 		//check if MAXGAMES is already reached
@@ -512,7 +516,9 @@ void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port){
 			error_handler(-7);
 		}
 		//wait for connection
- 		player_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
+
+
+ 		player_gamesocket = accept(gamesocket, (struct sockaddr *) NULL, NULL);
  		if(comsocket < 0) error_handler(-6);
 		//get playername from client
 		msgSize = recv(player_gamesocket, pname, PLAYER_NAME_LEN+1, 0);  							//TODO:  sizeof correct?
