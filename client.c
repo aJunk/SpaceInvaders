@@ -39,6 +39,11 @@ int main(int argc, char **argv) {
 	int gamesocket;
 	int port = STD_PORT;
 	char ip[16] = "127.0.0.1";
+	char playername[PLAYER_NAME_LEN + 1] = "";
+	int ret;
+	int msgSize;
+	int mode = 0;
+
 
  sound_queue = open("S_QUEUE", O_RDWR);
 
@@ -57,7 +62,38 @@ int main(int argc, char **argv) {
 	//Connect
 	gamesocket = connect2server(ip, port);
 	if(gamesocket < 0) error_handler(gamesocket);
-	
+
+  // Send gamemode (new game/ spectator)
+	if(strlen(playername) != 0){ //wants to start a new game
+		mode = NEWGAME;
+		ret = send(gamesocket, &mode, sizeof(int), 0);
+		if(ret < 0) error_handler(-7);
+		msgSize = recv(gamesocket, &port, sizeof(int), 0); 							//TODO:  sizeof correct?
+		if(msgSize <= 0) error_handler(-8);
+		close(gamesocket);
+		gamesocket = connect2server(ip, port);
+		//Send playername to server
+		ret = send(gamesocket, playername,PLAYER_NAME_LEN+1, 0);
+		if(ret < 0) error_handler(-7);
+
+	}
+	else{ //wants to become a spectator
+		ret = send(gamesocket, &mode, sizeof(int), 0);
+		if(ret < 0) error_handler(-7);
+		//msgSize = recv(gamesocket, XX, XX), 0);						//recive struct with ongoing games
+		close(gamesocket);
+		/*
+		 * ask user which game (set port)
+		 */
+		gamesocket = connect2server(ip, port);
+		if(gamesocket < 0) error_handler(gamesocket);
+		/*
+		 * adapt code for spectator
+		 */
+		exit(EXIT_SUCCESS);
+	}
+
+
 	gameloop(gamesocket);
 	return 0;
 }
@@ -66,12 +102,13 @@ void gameloop(int gamesocket){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
+
 	client_data_exchange_container = NULL;
 	
 	//Send playername to server
 	ret = send(gamesocket, playername, sizeof(playername), 0);
 	if(ret < 0) error_handler(-7);
-	
+
 // GAME STARTS HERE ------------------------------------------------
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
@@ -109,7 +146,7 @@ void gameloop(int gamesocket){
 				return;
 			}
 		}
-		
+
 		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 		//DECODE TRANSMITTED PACKAGE
@@ -170,7 +207,7 @@ void gameloop(int gamesocket){
 				return;
 			}
 		}
-		
+
 		//wrefresh(statscr);
 
 	//TRANSMIT TCP PACKAGE

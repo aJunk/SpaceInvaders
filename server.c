@@ -1,4 +1,5 @@
 #define _BSD_SOURCE
+
 #include <unistd.h>
 
 #include <ncurses.h>
@@ -6,6 +7,7 @@
 #include <time.h>
 #include <string.h>
 
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -13,6 +15,7 @@
 #include <stdio.h>
 #include "communication.h"
 #include "graphX.h"
+
 
 //server-variables
 Player s_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
@@ -23,10 +26,13 @@ Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
 char dir = 'r';		//direction objects move to
 
 time_t t;
+time_t currentTime;
 
 //serverside functions
 int launch_gameserver(int port);
-void gameloop(int gamesocket);
+void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port);
+int check_alive (Game game_mem[]);
+void gameloop(int gamesocket,int player_gamesocket,char pname[]); //does not suport sectaors jet!!
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
@@ -39,11 +45,13 @@ int max_y = 0, max_x = 0;
 
 int main(int argc, char **argv) {
 	int ret = 0;
-	int gamesocket, new_gamesocket;
+	int mastersocket, comsocket;
 	int port = STD_PORT;
+	int mode;
+	int msgSize = 0 ;
 	struct sockaddr_in address;
 	socklen_t addrLength = sizeof(address);
-	int pid = 0;
+	Game game_mem[MAXGAMES]={{{""},0,0}};
 
 	// Check arguments
 	if(argc > 2){
@@ -52,41 +60,41 @@ int main(int argc, char **argv) {
 	}
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
 
-	// Launch gameserver
-	gamesocket = launch_gameserver(port);
-	if(gamesocket < 0) error_handler(gamesocket);
+	// Launch masterserver
+	mastersocket = launch_gameserver(port);
+	if(mastersocket < 0) error_handler(mastersocket);				//Errorhandler correct?
 
-	// Get connections
 	while(1){
-		new_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
-		if(new_gamesocket < 0) error_handler(-6);
+		// wait for connection
+		comsocket = accept(mastersocket, (struct sockaddr *) &address, &addrLength);
+		if(comsocket < 0) error_handler(-6);
 
-		// Create child process			basic structure by http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
-		pid = fork();
-		if(pid < 0) error_handler(-11);
+		msgSize = recv(comsocket, &mode, sizeof(int), 0);
+		if(msgSize <= 0)	error_handler(-8);
 
-		if (pid == 0){
-			close(gamesocket);
-			gameloop(new_gamesocket);
+		if(mode == NEWGAME){
+				make_new_game(game_mem, mastersocket, comsocket, port);
 		}
-		else close(new_gamesocket);
+		else{
+				if(check_alive(game_mem) < 1){ //no active games
+																																// ??
+				}
+				else{
+					ret = send(comsocket, game_mem, sizeof(game_mem), 0); // !! size?
+					if(ret < 0){
+						error_handler(-7);
+					}
+				}
+		}
 	}
-
-//TODO: EXIT STRATEGY
-	// Disconnect from client
-	ret = close(gamesocket);
-	if(ret < 0) error_handler(-9);
-
-	return 0;
 }
 
-void gameloop(int gamesocket){
+void gameloop(int gamesocket,int player_gamesocket, char playername[]){
 	int ret = 0;
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 2;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
-	char playername[PLAYER_NAME_LEN + 1] = "";
 
 	server_data_exchange_container = NULL;
 	server_res_buf = 0;
@@ -95,7 +103,7 @@ void gameloop(int gamesocket){
 	s_player.pos[0] = MX/2;
 	s_player.pos[1] = MY-2;
 	s_player.modifier = 0;
-	s_player.life = 5;
+	s_player.life = 3;
 	s_player.score = 0;
 	s_player.amunition = 1;
 	s_player.instructions = 0;
@@ -115,10 +123,6 @@ void gameloop(int gamesocket){
 		s_obj[i].status = UPDATED;
 	}
 
-	//get playername from client
-	msgSize = recv(gamesocket, playername, sizeof(playername), 0);
-	if(msgSize <= 0) error_handler(-8);
-
 //SERVERSIDE INIT
 	init_graphix();
 	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
@@ -137,13 +141,14 @@ void gameloop(int gamesocket){
 
 //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
+		time(&currentTime);
 		//usleep(DELAY);
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
 		//transmit TCP package
 	//TODO: Calculate size of container to send
-		ret = send(gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		ret = send(player_gamesocket, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		if(ret < 0){
 			free(server_data_exchange_container);
 			error_handler(-7);
@@ -152,7 +157,7 @@ void gameloop(int gamesocket){
 		//usleep(DELAY);
 
 		//get TCP package
-		msgSize = recv(gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
+		msgSize = recv(player_gamesocket, &(s_player.instructions), sizeof(s_player.instructions), 0);
 		if(msgSize <= 0){
 			free(server_data_exchange_container);
 			error_handler(-8);
@@ -164,13 +169,15 @@ void gameloop(int gamesocket){
 			free(server_data_exchange_container);
 			endwin();
 			printf("GAME RESTARTET BY PLAYER\n");
-			gameloop(gamesocket);
+			gameloop( gamesocket, player_gamesocket, playername);
 			return;
 		}
 
 		//initiate shot & update player
 		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
-		update_player(&s_player, s_obj, MX, MY);
+		ret = update_player(&s_player, s_obj, MX, MY);
+		if(ret == 1) s_player.life--;
+
 
 		//update shots
 		shoot(s_shots, NULL, s_obj);
@@ -178,8 +185,14 @@ void gameloop(int gamesocket){
 		//move objects
 		if(loopCount == appearTime){
 			ret = move_object(1);
-			if(ret == 1) s_player.life = 0;			//set player-lifes to 0 --> let player know game over
+			if(ret == 1) s_player.life--;			//set player-lifes to 0 --> let player know game over
 			loopCount = 0;
+		}
+
+		//make falling objects faster than sideways moving ones!
+		if(loopCount%(appearTime/8) == (appearTime/8)-1){
+			ret = move_object(2);
+			if(ret == 1) s_player.life--;
 		}
 
 		draw_player(&s_player, 'o');
@@ -203,6 +216,9 @@ void gameloop(int gamesocket){
 	printf("QUIT BY PLAYER\n");
 	exit(EXIT_SUCCESS);
 }
+/*
+ * TODO: check for spectators, add socket, give data to spectators
+ */
 
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
   for(int i = 0; i < AMUNITION; i++){
@@ -245,16 +261,22 @@ int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t
 
 int update_player(Player *_player,Object obj[MX * MY], uint16_t max_x, uint16_t max_y){
   //update player position
+	int gameover = 0;
+
   if ((_player->pos[0] < (max_x - 1))&&(_player->instructions & RIGHT)) {
     if(!test_for_collision_with_object(_player->pos, obj, 1, 0)) _player->pos[0]++;
+		else gameover = 1;
   } else if ((_player->pos[0]  > 0)&&(_player->instructions & LEFT)) {
     if(!test_for_collision_with_object(_player->pos, obj, -1, 0)) _player->pos[0]--;
+		else gameover = 1;
   } else if ((_player->pos[1] < (max_y - 1))&&(_player->instructions & DOWN)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, 1)) _player->pos[1]++;
+		else gameover = 1;
   } else if((_player->pos[1]  > MY - HEIGHT_OF_PLAYER_SPACE)&&(_player->instructions & UP)) {
     if(!test_for_collision_with_object(_player->pos, obj, 0, -1)) _player->pos[1]--;
+		else gameover = 1;
   }
-  return 0;
+  return gameover;
 }
 
 //GET FUNCTION TO EXTERNAL FILE
@@ -290,6 +312,7 @@ int move_object(uint8_t type){
 	int xOffset = 0;
 	int appearChance = 20;
 	int gameover = 0;
+	int max_y = 0;
 
 	if(type == 1){
 		//set x-move direction
@@ -317,8 +340,33 @@ int move_object(uint8_t type){
 					gameover = 1;
 					break;
 				}
+
+				if(s_obj[i].pos[1] > max_y) max_y = s_obj[i].pos[1];
 			}
 		}
+
+		//Randomly spawn an object 2
+		int shoot = rand() % 100;
+		int currMaxY = 0;
+		int currMinX = MX;
+		if(shoot > 70){
+			int o = get_empty_obj_num(0);
+
+			for(int i = 0; i < (MX*MY); i++){
+				if(abs(s_player.pos[0]-s_obj[i].pos[0]) < currMinX){
+					currMinX = s_player.pos[0]-s_obj[i].pos[0];
+					if(s_obj[i].pos[1] > currMaxY) currMaxY = s_obj[i].pos[1];
+				}
+			}
+
+			s_obj[o].pos[0] = s_player.pos[0] - currMinX;
+			s_obj[o].pos[1] = currMaxY + 1;
+			s_obj[o].life = 1;
+			s_obj[o].type = 2;
+			s_obj[o].status = UPDATED;
+
+		}
+
 
 		//make new line of objects at top
 		if(yOffset == 1){
@@ -326,6 +374,22 @@ int move_object(uint8_t type){
 			if(dir == 'r') dir = 'l';		//change direction for next time
 			else dir = 'r';
 		}
+	}else if(type == 2){
+
+		for(int i = 0; i < (MX*MY); i++){
+			if(s_obj[i].type == 2 && s_obj[i].life > 0){		//check if it is a falling object and still alive
+				if(test_for_collision(s_obj[i].pos, s_player.pos, 0, 1)){
+					s_obj[i].life = 0;
+					gameover = 1;
+				}else if(s_obj[i].pos[1] < MY ){
+					s_obj[i].pos[1]++;
+				}else {
+					s_obj[i].life = 0;
+				}
+				s_obj[i].status = UPDATED;
+			}
+		}
+
 	}
 	return gameover;
 }
@@ -337,9 +401,10 @@ void place_object(int lines, int appearChance){
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
 		s_obj[objn].pos[1] = rand() % MY;
-//choose how hard it should be!
+		//choose how hard it should be!
 		//s_obj[objn].life = (rand() % 3) +1;
 		s_obj[objn].life = 1;
+		s_obj[objn].type = 1;
 
 		s_obj[objn].status = UPDATED;
 	}
@@ -351,7 +416,7 @@ void place_object(int lines, int appearChance){
 				s_obj[objn].pos[0] = j;
 				s_obj[objn].pos[1] = i;
 				s_obj[objn].type = 1;				//identify wandering objects
-//choose how hard it should be!
+				//choose how hard it should be!
 		//s_obj[objn].life = (rand() % 3) +1;
 				s_obj[objn].life = 1;
 				s_obj[objn].status = UPDATED;
@@ -392,3 +457,119 @@ int launch_gameserver(int port){
 
 	return gamesocket;
 }
+
+
+/*TODO:
+				error_handler
+*/
+void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port){
+
+    pid_t cpid; //new child PID
+		char pname[PLAYER_NAME_LEN+1];
+		int msgSize = -1;
+    int i;
+		int ret=0;
+		int gamesocket,player_gamesocket;
+		int game_port;
+		int numgames;
+		struct sockaddr_in address;
+		socklen_t addrLength = sizeof(address);
+
+		//check which games are still active
+		numgames = check_alive(game_mem);
+		//check if MAXGAMES is already reached
+		if(numgames >= MAXGAMES){
+			//TODO inform client no more game possible
+
+			return;
+		}
+	  //find free port next to serverport
+		game_port = port;
+		int used;
+		do{
+			port++;
+			used = 0;
+			for(i = 0; i<MAXGAMES; i++) {
+	  		if(game_mem[i].port == game_port){
+					used = 1;
+					continue;
+				}
+			}
+  	}while(used != 0);
+		game_port = 4768;																												 //TODO: Port hardcoded!!
+		//start new gameserver
+		gamesocket = launch_gameserver(game_port);																//TODO: what if port is already used? retry?
+		if(gamesocket < 0) error_handler(gamesocket);
+		//send new port to client
+		ret = send(comsocket, &game_port, sizeof(int), 0);
+		if(ret < 0){
+			error_handler(-7);
+		}
+		//wait for connection
+ 		player_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
+ 		if(comsocket < 0) error_handler(-6);
+		//get playername from client
+		msgSize = recv(player_gamesocket, pname, PLAYER_NAME_LEN+1, 0);  							//TODO:  sizeof correct?
+		if(msgSize <= 0) error_handler(-8);
+		//fork process
+    cpid = fork();
+    if (cpid == -1) {       // fork failed
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    else if (cpid != 0) {    // I am a parent -> store connection
+				//go to next empty place
+        for(i=0; (i<MAXGAMES) && (game_mem[i].pid!=0); i++);
+				strcpy(game_mem[i].name,pname);
+				game_mem[i].pid = cpid;
+				game_mem[i].port = port;
+				close(comsocket);
+				close(gamesocket);
+				close(player_gamesocket);
+				return;
+    }
+    else {        					// I am a child -> start game, terminate unused connections
+				close(mastersocket);
+				close(comsocket);
+
+				gameloop(gamesocket,player_gamesocket,pname);
+        exit(EXIT_SUCCESS);
+    }
+}
+/*TODO:
+  -errorhandler
+	-retry if port is olready used?
+
+  EXIT STRATEGY
+	// Disconnect from client
+	ret = close(mastersocket);
+	if(ret < 0) error_handler(-9);
+
+	return 0;
+*/
+
+int check_alive (Game game_mem[]){
+
+  int status;
+  int numgames=0;
+  pid_t result;
+
+  for(int i=0; i<MAXGAMES; i++){
+      if(game_mem[i].pid != 0){
+          result = waitpid(game_mem[i].pid, &status, WNOHANG); //return imediately if process is still alive (Option WNOHANG)
+          if (result == 0) {
+                numgames ++;
+          }
+          else if (result == -1) {
+                perror("waitpid");  //Error -> Exit?
+          }
+          else {
+                game_mem[i].pid = 0;      // Child exited -> delete entry
+								game_mem[i].port = 0;
+								strcpy(game_mem[i].name, "");
+          }
+      }
+  }
+  return numgames;
+}
+//todo: errorhandler

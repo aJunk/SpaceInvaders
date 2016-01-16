@@ -7,10 +7,33 @@ WINDOW* statscr;
 WINDOW* scorescr;
 WINDOW* infoscr;
 
-void draw_obj(Object _obj[MX * MY], char character){
-  wattron( fieldscr, COLOR_PAIR(obj_colour));
+void print_statscr(char* str){
+  mvwprintw(statscr, 1, 1,"%s", str);
+  wrefresh(statscr);
+}
 
-  for(int i = 0; i < MX * MY; i++)if(_obj[i].life > 0)mvwaddch(fieldscr, _obj[i].pos[1] + 1, _obj[i].pos[0] + 1, character);
+void draw_obj(Object _obj[MX * MY], char character){
+
+  for(int i = 0; i < MX * MY; i++){
+    if(_obj[i].life > 0 && character != ' '){
+      switch(_obj[i].type){
+        case 1:
+          wattron( fieldscr, COLOR_PAIR(obj_colour));
+          mvwaddch(fieldscr, _obj[i].pos[1] + 1, _obj[i].pos[0] + 1, character);
+          break;
+        case 2:
+          wattron( fieldscr, COLOR_PAIR(obj_2_color));
+          mvwaddch(fieldscr, _obj[i].pos[1] + 1, _obj[i].pos[0] + 1, OP_SHOT);
+          break;
+        default:
+          mvwprintw(statscr, 1, 1, "did not display unknown object!");
+          wrefresh(statscr);
+          break;
+      }
+    }else if(_obj[i].life > 0 && character == ' '){
+      mvwaddch(fieldscr, _obj[i].pos[1] + 1, _obj[i].pos[0] + 1, character);
+    }
+  }
 
   wattron( fieldscr, COLOR_PAIR(bkg_colour));
 }
@@ -61,6 +84,7 @@ void init_graphix(){
   init_pair(bkg_colour, COLOR_GREEN, COLOR_BLACK);
   init_pair(player_colour, COLOR_YELLOW, COLOR_BLACK);
   init_pair(gray_colour, COLOR_WHITE, COLOR_BLACK);
+  init_pair(obj_2_color, COLOR_MAGENTA, COLOR_BLACK);
 
   wattron( fieldscr, COLOR_PAIR(gray_colour));
   for(int i = 0; i <= MX; i++)mvwaddch(fieldscr, MY - HEIGHT_OF_PLAYER_SPACE, i, '-');
@@ -87,11 +111,12 @@ void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t
 //int disp_infoscr(char mode, int socket, Player *_player)
 int disp_infoscr(char mode){
 	int command = 0;
-		
+
 	//save actual fieldscreen
 	scr_dump("fieldscreen_dump");
-	
+
 	wborder(infoscr, '|', '|', '-', '-', '+', '+', '+', '+');
+
 	switch(mode){
 		case 'q': {		//quit
 			mvwprintw(infoscr, 1, 1, "Really quit game?");
@@ -135,14 +160,9 @@ int disp_infoscr(char mode){
 	//Delete infoscreen
 	wclear(infoscr);
 	wrefresh(infoscr);
-	
+
 	//Restore fieldscreen
 	scr_restore("fieldcreen_dump");
-	
+
 	return command;
 }
-
-
-
-
-
