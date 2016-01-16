@@ -27,20 +27,18 @@ Object c_obj[MX * MY] = {{{0,0}, 0, 0, NO_CHANGE}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
+char playername[PLAYER_NAME_LEN + 1] = "";
 
 //clientside functions
 int connect2server(char ip[16], int port);
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
+void gameloop(int gamesocket);
 
 int main(int argc, char **argv) {
-	int ret = 0;
-	int msgSize = -1;
 	int gamesocket;
 	int port = STD_PORT;
 	char ip[16] = "127.0.0.1";
-	char playername[PLAYER_NAME_LEN + 1] = "";
-	int ch;
 
  sound_queue = open("S_QUEUE", O_RDWR);
 
@@ -59,7 +57,16 @@ int main(int argc, char **argv) {
 	//Connect
 	gamesocket = connect2server(ip, port);
 	if(gamesocket < 0) error_handler(gamesocket);
+	
+	gameloop(gamesocket);
+	return 0;
+}
 
+void gameloop(int gamesocket){
+	int ret = 0;
+	int msgSize = -1;
+	int ch;
+	
 	//Send playername to server
 	ret = send(gamesocket, playername, sizeof(playername), 0);
 	if(ret < 0) error_handler(-7);
@@ -173,7 +180,7 @@ int main(int argc, char **argv) {
 	ret = close(gamesocket);
 	if(ret < 0) error_handler(-29);
 
-	return 0;
+	return;
 }
 
 void move_player(Player *_player, int input){
