@@ -37,6 +37,7 @@ void gameloop(int gamesocket);
 
 int main(int argc, char **argv) {
 	int gamesocket;
+	int ret;
 	int port = STD_PORT;
 	char ip[16] = "127.0.0.1";
 
@@ -73,6 +74,10 @@ int main(int argc, char **argv) {
 	printf("got: %d\n", buf);
 	while(1);
 */
+	//Send playername to server
+	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
+	if(ret < 0) error_handler(-7);
+
 	uint16_t buf = 0;
 	int msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
 	printf("got Port: %d\n", buf);
@@ -96,9 +101,7 @@ void gameloop(int gamesocket){
 	int msgSize = -1;
 	int ch;
 
-	//Send playername to server
-	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
-	if(ret < 0) error_handler(-7);
+
 
   // GAME STARTS HERE ------------------------------------------------
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);

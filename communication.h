@@ -29,6 +29,8 @@
 #define PORT_MAX 65535
 #define STD_PORT 4657
 #define NUM_CONNECTIONS 5
+#define MAXGAMES 5
+#define MAXSPECT 5
 #define EXIT_ERROR 1
 #define EXIT_SUCCESS 0
 
@@ -106,7 +108,7 @@ typedef struct{
     char name[PLAYER_NAME_LEN + 1];
     pid_t pid;
     int port;
-}Client;
+}Game;
 
 typedef struct {
   char width;

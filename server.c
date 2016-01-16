@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -27,7 +28,8 @@ time_t currentTime;
 
 //serverside functions
 int launch_gameserver(int port);
-void gameloop(int socket);
+void gameloop(int socket,char playername[]);
+int check_alive (Game game_mem[]);
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
@@ -45,7 +47,12 @@ int main(int argc, char **argv) {
 	int port = STD_PORT;
 	struct sockaddr_in address;
 	socklen_t addrLength = sizeof(address);
+	Game game_mem[MAXGAMES]={{{""},0,0}};
 	int pid = 0;
+	char playername[PLAYER_NAME_LEN+1]="";
+	int numgames = 0;
+	int msgSize;
+	int i;
 
 	// Check arguments
 	if(argc > 2){
@@ -63,44 +70,69 @@ int main(int argc, char **argv) {
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
 		if(new_client < 0) error_handler(-6);
 
-		//assuming player wants to start a new game and making a server for him
-		//creating new socket bound to any available port
-		new_socket = launch_gameserver(NEXT_AVAILABLE);
-		if(new_socket < 0) error_handler(new_socket);
-		//looking up the port the socket was bound to and sending it to the client.
-		uint16_t tmp_port = which_port(new_socket);
-		ret = send(new_client, &tmp_port, sizeof(uint16_t), 0);
-		//closing the connection (socket still open)
-		close(new_client);
-		//socket can now be given to child!
+		//get playername from client
+		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
+		if(msgSize <= 0) error_handler(-8);
+
+		if(strlen(playername) != 0){ //player wants to start a new game
+			//check if maximal number of games is already reached
+			numgames = check_alive(game_mem);
+			if(numgames >= MAXGAMES) error_handler(-1);																	//TODO: make errorhandler!!
+
+			//creating new socket bound to any available port
+			new_socket = launch_gameserver(NEXT_AVAILABLE);
+			if(new_socket < 0) error_handler(new_socket);
+			//looking up the port the socket was bound to and sending it to the client.
+			uint16_t tmp_port = which_port(new_socket);
+
+			//send port
+			ret = send(new_client, &tmp_port, sizeof(uint16_t), 0);
+			//closing the connection (socket still open)
+			close(new_client);
+			//socket can now be given to child!
 
 
-		// Create child process
-		pid = fork();
-		if(pid < 0) error_handler(-11);
+			// Create child process
+			pid = fork();
+			if(pid < 0) error_handler(-11);
 
-		if (pid == 0){
-			close(gamesocket);
-			gameloop(new_socket);
+			if (pid == 0){
+				close(gamesocket);
+				gameloop(new_socket,playername);
+			}
+			else{
+				//go to next empty place
+				for(i=0; (i<MAXGAMES) && (game_mem[i].pid!=0); i++);
+				strcpy(game_mem[i].name,playername);
+				game_mem[i].pid = pid;
+				game_mem[i].port = tmp_port;
+				close(new_client);
+			}
 		}
-		else close(new_client);
+		else{ //wants to become a spectator
+
+			//TODO:ask client which game he wants so view and give him the corresponding port
+
+		}
+
+
 	}
 
-//TODO: EXIT STRATEGY
+/*TODO: EXIT STRATEGY
 	// Disconnect from client
-	ret = close(gamesocket);
+	ret = close(gamesocket);						//may cause error if child returns
 	if(ret < 0) error_handler(-9);
+*/
 
 	return 0;
 }
 
-void gameloop(int socket){
+void gameloop(int socket, char playername[]){
 	int ret = 0;
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 20;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
-	char playername[PLAYER_NAME_LEN + 1] = "";
 
 	//waiting for client to connect!
 	int client = accept(socket, (struct sockaddr *) NULL, NULL);
@@ -135,10 +167,6 @@ void gameloop(int socket){
 		//Art* art;
 		s_obj[i].status = UPDATED;
 	}
-
-	//get playername from client
-	msgSize = recv(client, playername, PLAYER_NAME_LEN + 1, 0);
-	if(msgSize <= 0) error_handler(-8);
 
   //SERVERSIDE INIT
 	init_graphix();
@@ -185,7 +213,7 @@ void gameloop(int socket){
 			free(server_data_exchange_container);
 			endwin();
 			printf("GAME RESTARTET BY PLAYER\n");
-			gameloop(socket);
+			gameloop(socket,playername);
 			return;
 		}
 
@@ -478,3 +506,29 @@ uint16_t which_port(int socket){
 
 	return ntohs(address.sin_port);
 }
+
+int check_alive (Game game_mem[]){
+
+  int status;
+  int numgames=0;
+  pid_t result;
+
+  for(int i=0; i<MAXGAMES; i++){
+      if(game_mem[i].pid != 0){
+          result = waitpid(game_mem[i].pid, &status, WNOHANG); //return imediately if process is still alive (Option WNOHANG)
+          if (result == 0) {
+                numgames ++;
+          }
+          else if (result == -1) {
+                perror("waitpid");  //Error -> Exit?
+          }
+          else {
+                game_mem[i].pid = 0;      // Child exited -> delete entry
+								game_mem[i].port = 0;
+								strcpy(game_mem[i].name, "");
+          }
+      }
+  }
+  return numgames;
+}
+//todo: errorhandler
