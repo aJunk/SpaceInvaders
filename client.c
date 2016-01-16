@@ -23,7 +23,7 @@
 int sound_queue;
 //client-variables
 Player c_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
-Object c_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
+Object c_obj[MX * MY] = {{{0,0}, 0, 0, NO_CHANGE}};
 char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
@@ -83,6 +83,17 @@ int main(int argc, char **argv) {
 			if(errno != EWOULDBLOCK)error_handler(-8);
 		}
 
+		//Look if player is game over
+		if(((Player*)client_data_exchange_container)->life == 0){
+			ret = disp_infoscr('g');
+			if(ret == 'y'){					//really exit
+				c_player.instructions |= QUIT;
+				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
+					if(ret < 0) error_handler(-7);				
+				break;
+			}
+		}
+		
 		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 		//DECODE TRANSMITTED PACKAGE
@@ -120,15 +131,35 @@ int main(int argc, char **argv) {
 
 		init_shot(&c_player, ch);
 
-		if(ch == 'q') break;
-
+		if(ch == 'q'){						//quit game
+			ret = disp_infoscr(ch);
+			if(ret == 'y'){					//really exit
+				c_player.instructions |= QUIT;
+				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
+					if(ret < 0) error_handler(-7);		
+				continue;
+				break;
+			}
+			else init_graphix();			//just redraw screen
+		}
+		if(ch == 'p') disp_infoscr(ch);		//game paused
+		if(ch == 'r'){						//restart game
+			ret = disp_infoscr(ch);
+			if(ret == 'y'){			//really exit
+				c_player.instructions |= RESTART;
+				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
+					if(ret < 0) error_handler(-7);
+				continue;
+		//TODO: add function to restart gameloop
+			}
+			else init_graphix();			//just redraw screen
+		}
+		
 		//wrefresh(statscr);
 
 	//TRANSMIT TCP PACKAGE
-		//c_player.instructions = 16;
 		ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 		if(ret < 0) error_handler(-7);
-		//printf("%d\n", c_player.instructions);
 
 	//clientside <- end
 	}

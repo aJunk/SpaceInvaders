@@ -30,6 +30,7 @@
 #define STD_PORT 4657
 #define NUM_CONNECTIONS 5
 #define EXIT_ERROR 1
+#define EXIT_SUCCESS 0
 
 //ncurses color functions
 #define bkg_colour 2
@@ -45,6 +46,8 @@
 #define LEFT 32
 #define RIGHT 16
 #define INIT_SHOT 8
+#define QUIT 4
+#define RESTART 2
 //TODO: mask for request_pause/request_resume (same bit?), restart, quit game
 
 //Package handling flags
@@ -65,6 +68,10 @@
 //SCORE-SCREEN width & height
 #define SCORE_MX 50
 #define SCORE_MY 2
+
+//INFO-SCREEN width & height
+#define INFO_MX 30
+#define INFO_MY 6
 
 //modes for clearing windows
 #define LEAVE_BORDER 0

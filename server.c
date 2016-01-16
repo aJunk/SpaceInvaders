@@ -16,7 +16,7 @@
 
 //server-variables
 Player s_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
-Object s_obj[MX * MY] = {{{0,0}, 0, 0, 0}};
+Object s_obj[MX * MY] = {{{0,0}, 0, 0, UPDATED}};
 char *server_data_exchange_container = NULL;
 char *server_res_buf = 0;
 Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
@@ -84,10 +84,35 @@ void gameloop(int gamesocket){
 	int ret = 0;
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
-	int appearTime = 25;				//number of while-circles until new objects appear
+	int appearTime = 20;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
 	char playername[PLAYER_NAME_LEN + 1] = "";
 
+	server_data_exchange_container = NULL;
+	server_res_buf = 0;
+	dir = 'r';
+	
+	s_player.pos[0] = MX/2;
+	s_player.pos[1] = MY-2;
+	s_player.modifier = 0;
+	s_player.life = 5;
+	s_player.score = 0;
+	s_player.amunition = 1;
+	s_player.instructions = 0;
+	
+	s_shots[0].pos[0] = 0;
+	s_shots[0].pos[1] = 0;
+	s_shots[0].active = 0;
+	
+	for(int i = 0; i < MX*MY; i++){
+		s_obj[i].pos[0] = 0;
+		s_obj[i].pos[1] = 0;
+		s_obj[i].type = 0;
+		s_obj[i].life = 0;
+		//Art* art;
+		s_obj[i].status = UPDATED;
+	}
+	
 	//get playername from client
 	msgSize = recv(gamesocket, playername, sizeof(playername), 0);
 	if(msgSize <= 0) error_handler(-8);
@@ -95,6 +120,7 @@ void gameloop(int gamesocket){
 //SERVERSIDE INIT
 	init_graphix();
 	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
+	
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
@@ -129,6 +155,16 @@ void gameloop(int gamesocket){
 			free(server_data_exchange_container);
 			error_handler(-8);
 		}
+		
+		//check for quit, restart
+		if(s_player.instructions & QUIT) break;
+		else if(s_player.instructions & RESTART){
+			free(server_data_exchange_container);
+			endwin();
+			printf("GAME RESTARTET BY PLAYER\n");
+			gameloop(gamesocket);
+			return;
+		}
 
 		//initiate shot & update player
 		if(s_player.instructions & INIT_SHOT)shoot(s_shots, s_player.pos, s_obj);
@@ -140,7 +176,7 @@ void gameloop(int gamesocket){
 		//move objects
 		if(loopCount == appearTime){
 			ret = move_object(1);
-			if(ret == 1) usleep(300000000);
+			if(ret == 1) s_player.life = 0;			//set player-lifes to 0 --> let player know game over
 			loopCount = 0;
 		}
 
@@ -162,7 +198,8 @@ void gameloop(int gamesocket){
 	beep();
 	free(server_data_exchange_container);
 	endwin();
-	return;
+	printf("QUIT BY PLAYER\n");
+	exit(EXIT_SUCCESS);
 }
 
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){

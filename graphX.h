@@ -8,6 +8,7 @@
 extern WINDOW* fieldscr;
 extern WINDOW* statscr;
 extern WINDOW* scorescr;
+extern WINDOW* infoscr;
 
 
 void init_graphix();

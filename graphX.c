@@ -5,7 +5,7 @@
 WINDOW* fieldscr;
 WINDOW* statscr;
 WINDOW* scorescr;
-
+WINDOW* infoscr;
 
 void draw_obj(Object _obj[MX * MY], char character){
   wattron( fieldscr, COLOR_PAIR(obj_colour));
@@ -81,3 +81,67 @@ void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t
 	mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   |   Spectators %2d", playername, score, life, spectators);
 	wrefresh(scorescr);
 }
+
+void init_infoscr(){
+	infoscr = newwin(INFO_MY , INFO_MX, SCORE_MY + MY/2 - INFO_MY/2, MX/2 - INFO_MX/2);
+	wattron(infoscr, COLOR_PAIR(obj_colour));
+	wborder(infoscr, '|', '|', '-', '-', '+', '+', '+', '+'); 
+	wrefresh(infoscr);
+}
+
+//int disp_infoscr(char mode, int socket, Player *_player)
+int disp_infoscr(char mode){
+	int command = 0;
+	
+	init_infoscr();
+	//dumb fieldscreen wborder - rest von init zu init
+	switch(mode){
+		case 'q': {		//quit
+			mvwprintw(infoscr, 1, 1, "Really quit game?");
+			mvwprintw(infoscr, 2, 1, "Press [y] to quit");
+			mvwprintw(infoscr, 3, 1, "      [n] to continue");
+			wrefresh(infoscr);
+			command = wgetch(infoscr);
+			if(command == 'y' || command == 'n') break;		//get back to mainloop where command is handled
+			else disp_infoscr('q');							//wrong command - display again
+			break;
+			}
+		case 'r':{		//restart
+			mvwprintw(infoscr, 1, 1, "Really restart game?");
+			mvwprintw(infoscr, 2, 1, "Press [y] to restart");
+			mvwprintw(infoscr, 3, 1, "      [n] to continue game");
+			wrefresh(infoscr);
+			command = wgetch(infoscr);
+			if(command == 'y' || command == 'n') break;		//get back to mainloop where command is handled
+			else disp_infoscr('q');							//wrong command - display again
+			break;
+			}
+		case 'p': {		//pause
+			mvwprintw(infoscr, 1, 1, "Game paused");
+			mvwprintw(infoscr, 2, 1, "Press any key to continue");
+			wrefresh(infoscr);
+			wgetch(infoscr);
+			break;
+			}
+		case 'g': {		//gameover
+			mvwprintw(infoscr, 1, 1, "Game over");
+			mvwprintw(infoscr, 2, 1, "Press [r] to start a new game");
+			mvwprintw(infoscr, 3, 1, "      [q] to quit");
+			wrefresh(infoscr);
+			command = wgetch(infoscr);
+			if(command == 'r') disp_infoscr(command);			//restart game
+			else if(command == 'q') command = disp_infoscr(command);		//exit
+			else disp_infoscr('g');		//wrong command - display again
+			break;
+			}
+		default: break;
+	}
+	init_graphix();					//let infoscreen disappear again
+	//clear, wrefresh, restore fieldscreen
+	return command;
+}
+
+
+
+
+
