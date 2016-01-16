@@ -91,7 +91,7 @@ void gameloop(int gamesocket){
 	server_data_exchange_container = NULL;
 	server_res_buf = 0;
 	dir = 'r';
-	
+
 	s_player.pos[0] = MX/2;
 	s_player.pos[1] = MY-2;
 	s_player.modifier = 0;
@@ -99,11 +99,11 @@ void gameloop(int gamesocket){
 	s_player.score = 0;
 	s_player.amunition = 1;
 	s_player.instructions = 0;
-	
+
 	s_shots[0].pos[0] = 0;
 	s_shots[0].pos[1] = 0;
 	s_shots[0].active = 0;
-	
+
 	for(int i = 0; i < MX*MY; i++){
 		s_obj[i].pos[0] = 0;
 		s_obj[i].pos[1] = 0;
@@ -112,15 +112,15 @@ void gameloop(int gamesocket){
 		//Art* art;
 		s_obj[i].status = UPDATED;
 	}
-	
+
 	//get playername from client
 	msgSize = recv(gamesocket, playername, sizeof(playername), 0);
 	if(msgSize <= 0) error_handler(-8);
-	
+
 //SERVERSIDE INIT
 	init_graphix();
 	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
-	
+
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
@@ -155,7 +155,7 @@ void gameloop(int gamesocket){
 			free(server_data_exchange_container);
 			error_handler(-8);
 		}
-		
+
 		//check for quit, restart
 		if(s_player.instructions & QUIT) break;
 		else if(s_player.instructions & RESTART){
@@ -192,7 +192,7 @@ void gameloop(int gamesocket){
 		draw_obj(s_obj, ' ');
 		draw_shot(s_shots, ' ');
 		print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
-		
+
 		loopCount++;
 	}
 	beep();
@@ -210,9 +210,9 @@ void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
       _shots[i].pos[1] = init_pos[1];
     }
 	else if(_shots[i].active && obj != NULL){
-		if((_shots[i].pos[1] < 2) || test_for_collision_with_object(_shots[i].pos, obj, 0, 0)){
+		if((_shots[i].pos[1] < 2) || test_for_collision_with_object(_shots[i].pos, obj, 0, -1)){
 			for(int o = 0; o < MX * MY; o++){
-				if((obj[o].life > 0) &&(obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1])){
+				if((obj[o].life > 0) &&(obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1] -1)){
 					obj[o].life--;
 					if(obj[o].life == 0) s_player.score += 50;
 					obj[o].status = UPDATED;
@@ -293,7 +293,7 @@ int move_object(uint8_t type){
 		//set x-move direction
 		if(dir == 'r') xOffset = 1;		//move right
 		else xOffset = -1;				//move left
-		
+
 		//check if y-move is necessary
 		for(int i = 0; i < (MX*MY); i++){
 			if(s_obj[i].type == 1 && s_obj[i].life > 0){		//check if it is a wandering object still alive
