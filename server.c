@@ -121,11 +121,6 @@ void gameloop(int gamesocket,int player_gamesocket, char playername[]){
 		s_obj[i].status = UPDATED;
 	}
 
-	//get playername from client
-	msgSize = recv(gamesocket, playername, sizeof(playername), 0);
-	if(msgSize <= 0) error_handler(-8);
-
-
 //SERVERSIDE INIT
 	init_graphix();
 	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
@@ -499,6 +494,7 @@ void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port){
 				}
 			}
   	}while(used != 0);
+		game_port = 4768;																												 //TODO: Port hardcoded!!
 		//start new gameserver
 		gamesocket = launch_gameserver(game_port);																//TODO: what if port is already used? retry?
 		if(gamesocket < 0) error_handler(gamesocket);
@@ -511,7 +507,7 @@ void make_new_game(Game game_mem[],int mastersocket, int comsocket,int port){
  		player_gamesocket = accept(gamesocket, (struct sockaddr *) &address, &addrLength);
  		if(comsocket < 0) error_handler(-6);
 		//get playername from client
-		msgSize = recv(player_gamesocket, pname, sizeof(pname), 0);  							//TODO:  sizeof correct?
+		msgSize = recv(player_gamesocket, pname, PLAYER_NAME_LEN+1, 0);  							//TODO:  sizeof correct?
 		if(msgSize <= 0) error_handler(-8);
 		//fork process
     cpid = fork();

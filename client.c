@@ -40,7 +40,6 @@ int main(int argc, char **argv) {
 	int port = STD_PORT;
 	char ip[16] = "127.0.0.1";
 	char playername[PLAYER_NAME_LEN + 1] = "";
-	int ch;
 	int ret;
 	int msgSize;
 	int mode = 0;
@@ -74,7 +73,7 @@ int main(int argc, char **argv) {
 		close(gamesocket);
 		gamesocket = connect2server(ip, port);
 		//Send playername to server
-		ret = send(gamesocket, playername, sizeof(playername), 0);
+		ret = send(gamesocket, playername,PLAYER_NAME_LEN+1, 0);
 		if(ret < 0) error_handler(-7);
 
 	}
