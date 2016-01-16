@@ -212,7 +212,7 @@ void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]){
 	else if(_shots[i].active && obj != NULL){
 		if((_shots[i].pos[1] < 2) || test_for_collision_with_object(_shots[i].pos, obj, 0, -1)){
 			for(int o = 0; o < MX * MY; o++){
-				if((obj[o].life > 0) &&(obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1] -1)){
+				if((obj[o].life > 0) &&(obj[o].pos[0] ==  _shots[i].pos[0]) && (obj[o].pos[1] ==  _shots[i].pos[1] - 1)){
 					obj[o].life--;
 					if(obj[o].life == 0) s_player.score += 50;
 					obj[o].status = UPDATED;
