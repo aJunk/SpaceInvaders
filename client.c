@@ -92,9 +92,11 @@ int main(int argc, char **argv) {
 	if(ch == 'n'){
 		role = ACTIVE_PLAYER;
 		if(strlen(playername)==0) strcpy(playername,"PLAYERNAME");
-	}else{
-		role = SPECTATOR;
+	}else{ //SPECTATOR
+		role = SPECTATOR;																							//??
 		role |= ch;
+		//set choosen port																										// really necessary?
+		port=tmp_game_mem[0].port;																								//game hardcoded!!
 		strcpy(playername,""); //send empty playername
 	}
 	endwin();
@@ -104,24 +106,31 @@ int main(int argc, char **argv) {
 	if(ret < 0) error_handler(ERR_SEND);
 
 	uint16_t buf = 0;
-	msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
-	printf("got Port: %d\n", buf);
-	close(gamesocket);
-
-	//Connect
-	gamesocket = connect2server(ip, buf);
-	if(gamesocket < 0) error_handler(gamesocket);
-
-	//final handshake
- 	buf = 0;
-	msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
-	printf("got: %d\n", buf);
-
+	
 	switch(role){
 		case ACTIVE_PLAYER:
+			//recive new gameport
+			msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
+			printf("got Port: %d\n", buf);
+			close(gamesocket);
+
+			//Connect
+			gamesocket = connect2server(ip, buf);
+			if(gamesocket < 0) error_handler(gamesocket);
+
+			//final handshake
+			buf = 0;
+			msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
+			printf("got: %d\n", buf);
+			//enter gameloop
 			gameloop(gamesocket);
 			break;
 		default:
+			close(gamesocket);
+			//conect to game as spectator
+			gamesocket = connect2server(ip, port);
+			if(gamesocket < 0) error_handler(gamesocket);
+
 			spectate(gamesocket);
 			break;
 	}
