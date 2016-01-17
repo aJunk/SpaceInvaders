@@ -7,11 +7,6 @@ WINDOW* statscr;
 WINDOW* scorescr;
 WINDOW* infoscr;
 
-void print_statscr(char* str){
-  mvwprintw(statscr, 1, 1,"%s", str);
-  wrefresh(statscr);
-}
-
 void draw_obj(Object _obj[MX * MY], char character){
 
   for(int i = 0; i < MX * MY; i++){
@@ -95,7 +90,7 @@ void init_graphix(){
   wattron(infoscr, COLOR_PAIR(obj_colour));
 
   wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');	//left right top buttom tl tr bl br
-  wborder(statscr,  '|', '|', '-', '-', '+', '+', '+', '+');
+  wborder(statscr,  '|', ' ', ' ', '-', '|', '|', '+', '+');
   wborder(scorescr, ' ', ' ', '-', ' ', '+', '+', '|', '|');	//left and right border become corners (height = 2 rows)
 
   wrefresh(scorescr);
@@ -106,6 +101,11 @@ void init_graphix(){
 void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t life, int spectators){
 	mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   |   Spectators %2d", playername, score, life, spectators);
 	wrefresh(scorescr);
+}
+
+void print_statscr(){		//--------------------------------------------------
+	mvwprintw(statscr, 0, 1, " ARROWS & SPACE      [p]ause | [r]estart | [q]uit ");
+	wrefresh(statscr);
 }
 
 //int disp_infoscr(char mode, int socket, Player *_player)

@@ -66,7 +66,7 @@
 
 //STAT-SCREEN width & height
 #define STAT_MX 50
-#define STAT_MY 3
+#define STAT_MY 2
 
 //SCORE-SCREEN width & height
 #define SCORE_MX 50

@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 	const char greeting[] = "WELCOME TO THE ARENA!";
 	const char info[] = "enter number, \"n\" for new";
 	mvwprintw(scorescr, 1, MX/2 - strlen(greeting)/2, greeting);
-	mvwprintw(statscr, 1, MX/2 - strlen(info)/2, info);
+	mvwprintw(statscr, 0, MX/2 - strlen(info)/2, info);
 	wrefresh(scorescr);
 	wrefresh(statscr);
 
@@ -141,6 +141,7 @@ void gameloop(int gamesocket){
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  init_graphix();
 	  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+	  print_statscr();
 	  usleep(DELAY);
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
@@ -173,8 +174,6 @@ void gameloop(int gamesocket){
 				return;
 			}
 		}
-
-		mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 		//DECODE TRANSMITTED PACKAGE
 		if(errno != EWOULDBLOCK) handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
@@ -236,8 +235,6 @@ void gameloop(int gamesocket){
 			}
 		}
 
-		//wrefresh(statscr);
-
 	//TRANSMIT TCP PACKAGE
 		ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 		if(ret < 0) error_handler(-7);
@@ -262,22 +259,17 @@ void move_player(Player *_player, int input){
   switch (input){
     case KEY_RIGHT:
       _player->instructions |= RIGHT;
-			mvwaddstr(statscr, 1,1,"RIGHT  ");
       break;
     case KEY_LEFT:
       _player->instructions |= LEFT;
-			mvwaddstr(statscr, 1,1,"LEFT  ");
       break;
     case KEY_UP:
       _player->instructions |= UP;
-			mvwaddstr(statscr, 1,1,"UP    ");
       break;
     case KEY_DOWN:
       _player->instructions |= DOWN;
-			mvwaddstr(statscr, 1,1,"DOWN  ");
       break;
     default:
-			mvwprintw(statscr, 1,1,"      ");
       break;
   }
 
@@ -382,8 +374,6 @@ void spectate(int socket){
 					endwin();
 					exit(EXIT_SUCCESS);
 			}
-
-			mvwprintw(statscr, 1, 8, "%u ; %u", ((Player*)client_data_exchange_container)->pos[0], ((Player*)client_data_exchange_container)->pos[1] );
 
 			//DECODE TRANSMITTED PACKAGE
 			if(errno != EWOULDBLOCK) handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
