@@ -304,6 +304,10 @@ void gameloop(int socket[], char playername[]){
 	free(server_data_exchange_container);
 	endwin();
 	print_server_msg(pid, SUCCESS, "Game quit, ended normally. Score/name:", s_player.score, playername);
+	close(client);
+	for(int i = 0; i < MAXSPECTM i++)if(spectator[i] > 0)close(spectator[i]);
+	close(socket[0]);
+	close(socket[1]);
 	exit(EXIT_SUCCESS);
 }
 
