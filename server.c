@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in address;
 	socklen_t addrLength = sizeof(address);
 	Game game_mem[MAXGAMES]={{{""},0,0,0}};
-	int pid = 0;
+	int cpid = 0;
 	char playername[PLAYER_NAME_LEN+1]="";
 	int numgames = 0;
 	int msgSize;
@@ -115,12 +115,13 @@ int main(int argc, char **argv) {
 			print_server_msg(0, INFO, "Socket for spectators created. Port: ", tmp_port, "");
 
 			// Create child process
-			pid = fork();
-			if(pid < 0) print_server_msg(0, ERROR, "Forking failed", 0, "");			//error_handler(ERR_FORK);
+			cpid = fork();
+			if(cpid < 0) print_server_msg(0, ERROR, "Forking failed", 0, "");			//error_handler(ERR_FORK);
 
-			if (pid == 0){
+			if (cpid == 0){
 				close(gamesocket);
-				print_server_msg(0, INFO, "Temp socket disconnected", 0, "");
+				pid_t pid = getpid();
+				print_server_msg(pid, INFO, "Temp socket disconnected", 0, "");
 				gameloop(new_socket,playername);
 			}
 			else{
@@ -128,7 +129,7 @@ int main(int argc, char **argv) {
 				for(i=0; (i<MAXGAMES) && (game_mem[i].pid!=0); i++);
 
 				strcpy(game_mem[i].name,playername);
-				game_mem[i].pid = pid;
+				game_mem[i].pid = cpid;
 				game_mem[i].port = tmp_port;
 				close(new_socket[0]);
 				close(new_socket[1]);
@@ -236,6 +237,7 @@ void gameloop(int socket[], char playername[]){
 				for(i=0; (i < MAXSPECT) && (spectator[i] != 0); i++);
 				spectator[i]=temp;
 				anzspect++;
+				print_server_msg(pid, INFO, "New Spectator connected. Total spectators: ", anzspect, "");
 			}
 		}
 		for(i=0; i < MAXSPECT; i++){
@@ -244,6 +246,7 @@ void gameloop(int socket[], char playername[]){
 					if(ret <= 0){
 						spectator[i]= 0;
 						anzspect--;
+						print_server_msg(pid, INFO, "Spectator disconected. Total spectators: ", anzspect, "");
 					}
 			}
 		}
