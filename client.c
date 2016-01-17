@@ -16,7 +16,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <signal.h>
 #include "communication.h"
 #include "graphX.h"
 
@@ -36,6 +36,12 @@ void move_player(Player *_player, int input);
 void gameloop(int gamesocket);
 void spectate(int socket, char playername[]);
 
+void sig_handler(){
+	endwin();
+	printf("*** Client ended due to interrupt ***\n");		//printf may be interrupted but better than don't handling case
+	exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char **argv) {
 	int gamesocket;
 	int ret;
@@ -46,6 +52,11 @@ int main(int argc, char **argv) {
 	int msgSize;
 	Game tmp_game_mem[MAXGAMES]={{{""},0,0,0}};
 
+	struct sigaction sig = {.sa_handler = sig_handler};
+	sigemptyset(&sig.sa_mask);
+	sigaction(SIGINT, &sig, NULL);
+	sigaction(SIGPIPE, &sig, NULL);
+	
  sound_queue = open("S_QUEUE", O_RDWR);
 
 	// Check arguments
@@ -110,7 +121,7 @@ int main(int argc, char **argv) {
 		case ACTIVE_PLAYER:
 			//recive new gameport
 			msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
-			printf("got Port: %d\n", buf);
+			//printf("got Port: %d\n", buf);
 			close(gamesocket);
 
 			//Connect
@@ -120,7 +131,7 @@ int main(int argc, char **argv) {
 			//final handshake
 			buf = 0;
 			msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
-			printf("got: %d\n", buf);
+			//printf("got: %d\n", buf);
 			//enter gameloop
 			gameloop(gamesocket);
 			break;

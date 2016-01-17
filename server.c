@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <signal.h>
 #include "communication.h"
 #include "graphX.h"
 
@@ -42,12 +43,15 @@ uint16_t which_port(int socket);
 
 int max_y = 0, max_x = 0;
 
-int main(int argc, char **argv) {
+void sig_handler(){
+	printf("*** Server ended due to interrupt ***\n");		//printf may be interrupted but better than don't handling case
+	exit(EXIT_SUCCESS);
+}
+
+int main(int argc, char **argv){
 	int ret = 0;
 	int gamesocket, new_client, new_socket[2]; //new_socket[0] = gamesocket (blocking); new_socket[1] =spectatorsocket (nonblocking)
 	int port = STD_PORT;
-	struct sockaddr_in address;
-	socklen_t addrLength = sizeof(address);
 	Game game_mem[MAXGAMES]={{{""},0,0,0}};
 	int cpid = 0;
 	char playername[PLAYER_NAME_LEN+1]="";
@@ -55,7 +59,11 @@ int main(int argc, char **argv) {
 	int msgSize;
 	int i;
 
-
+	struct sigaction sig = {.sa_handler = sig_handler};
+	sigemptyset(&sig.sa_mask);
+	sigaction(SIGINT, &sig, NULL);
+	sigaction(SIGPIPE, &sig, NULL);
+  
 	// Check arguments
 	if(argc > 2){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
@@ -163,7 +171,7 @@ void gameloop(int socket[], char playername[]){
 	static uint8_t recursive = 0;
 	static int client = -1;
 	int spectator[MAXSPECT]={0};
-	int anzspect = 0;
+	int numspect = 0;
 	pid_t pid = getpid();
 
 	print_server_msg(pid, SUCCESS, "Gameloop entered. Playername:", 0, playername);
@@ -230,14 +238,14 @@ void gameloop(int socket[], char playername[]){
 		}
 
 		//HANDLE SPECTATORS
-		if(anzspect < MAXSPECT){
+		if(numspect < MAXSPECT){
 			temp = accept(socket[1], (struct sockaddr *) NULL, NULL);
 			if(temp > 0){
 				//go to next empty place
 				for(i=0; (i < MAXSPECT) && (spectator[i] != 0); i++);
 				spectator[i]=temp;
-				anzspect++;
-				print_server_msg(pid, INFO, "New Spectator connected. Total spectators: ", anzspect, "");
+				numspect++;
+				print_server_msg(pid, INFO, "New Spectator connected. Total spectators: ", numspect, "");
 			}
 		}
 		for(i=0; i < MAXSPECT; i++){
@@ -247,8 +255,8 @@ void gameloop(int socket[], char playername[]){
 					if(ret == 0 || ((ret == 1) && (tmp_byte == ENDOFCON))){
 						close(spectator[i]);
 						spectator[i]= 0;
-						anzspect--;
-						print_server_msg(pid, INFO, "Spectator disconected. Total spectators: ", anzspect, "");
+						numspect--;
+						print_server_msg(pid, INFO, "Spectator disconected. Total spectators: ", numspect, "");
 					}else if(tmp_byte == ACK){
 						ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}else{
