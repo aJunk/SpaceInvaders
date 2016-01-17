@@ -136,14 +136,18 @@ void gameloop(int socket, char playername[]){
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 20;				//number of while-circles until new objects appear
-	int appearChance = 20;				//chance that an object appears at a position
-
+	int appearChance = 20;			//chance that an object appears at a position
+	static uint8_t recursive = 0;
+	static int client = -1;
 	//waiting for client to connect!
-	int client = accept(socket, (struct sockaddr *) NULL, NULL);
+	if(!recursive){
+		client = accept(socket, (struct sockaddr *) NULL, NULL);
+		//final handshake
+		uint16_t tmp_int = 22;
+		ret = send(client, &tmp_int, sizeof(uint16_t), 0);
+	}
 	if(client < 0) error_handler(ERR_CONNECT);
-	//final handshake
-	uint16_t tmp_int = 22;
-	ret = send(client, &tmp_int, sizeof(uint16_t), 0);
+	recursive = 0;
 
 
 
@@ -219,6 +223,7 @@ void gameloop(int socket, char playername[]){
 			free(server_data_exchange_container);
 			endwin();
 			printf("GAME RESTARTED BY PLAYER\n");
+			recursive = 1;
 			gameloop(socket,playername);
 			return;
 		}
