@@ -20,7 +20,6 @@
 #include "communication.h"
 #include "graphX.h"
 
-int sound_queue;
 //client-variables
 Player c_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
 Object c_obj[MX * MY] = {{{0,0}, 0, 0, NO_CHANGE}};
@@ -28,15 +27,16 @@ char *client_data_exchange_container = NULL;
 char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 char playername[PLAYER_NAME_LEN + 1] = "";
+int sound_queue;
 
 //clientside functions
-int connect2server(char ip[16], int port);
+int connect2server(char ip[16], int port);			//creates a socket and connects to server with given ip and port; return socket-fd	
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
-void gameloop(int gamesocket);
+void gameloop(int gamesocket);						//loop where game is executed, send/recv to player takes place		
 void spectate(int socket, char playername[]);
 
-void sig_handler(){
+void sig_handler(){									//if a user/system interrupts
 	endwin();
 	printf("*** Client ended due to interrupt ***\n");		//printf may be interrupted but better than don't handling case
 	exit(EXIT_SUCCESS);
@@ -77,14 +77,14 @@ int main(int argc, char **argv) {
 
 	init_graphix();
 
-	 msgSize = recv(gamesocket, &tmp_game_mem, sizeof(Game) * MAXGAMES, 0);
-	 for(int i=0; i<MAXGAMES; i++){
-		 if(tmp_game_mem[i].pid != 0){
-			 mvwprintw(fieldscr, 2 + i, 1, "%d : \"%s\"\n", i, tmp_game_mem[i].name);
-		 }else{
-			 mvwprintw(fieldscr, 2 + i, 1, "%d : EMPTY-SLOT", i);
-		 }
-	 }
+	msgSize = recv(gamesocket, &tmp_game_mem, sizeof(Game) * MAXGAMES, 0);
+	for(int i=0; i<MAXGAMES; i++){
+		if(tmp_game_mem[i].pid != 0){
+			mvwprintw(fieldscr, 2 + i, 1, "%d : \"%s\"\n", i, tmp_game_mem[i].name);
+		}else{
+			mvwprintw(fieldscr, 2 + i, 1, "%d : EMPTY-SLOT", i);
+		}
+	}
 	wrefresh(fieldscr);
 
 	const char greeting[] = "WELCOME TO THE ARENA!";

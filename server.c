@@ -27,23 +27,22 @@ char dir = 'r';		//direction objects move to
 
 time_t t;
 time_t currentTime;
+int max_y = 0, max_x = 0;
 
 //serverside functions
-int launch_gameserver(int port);
-void gameloop(int socket[],char playername[]);
+int launch_gameserver(int port);					//makes a socket, binds it and listens on given port (if NEXT_AVAILABLE is given it takes next available port); returns socket-fd
+void gameloop(int socket[],char playername[]);		//loop where game is executed, send/recv to player takes place
 int check_alive (Game game_mem[]);
 void shoot(Shot _shots[AMUNITION] ,uint16_t init_pos[2], Object obj[MX * MY]);
 int test_for_collision(uint16_t pos1[2], uint16_t pos2[2], int8_t planned_step_x, int8_t planned_step_y);
 int test_for_collision_with_object(uint16_t pos1[2], Object obj[MX * MY], int8_t planned_step_x, int8_t planned_step_y);
 int update_player(Player *_player, Object obj[MX * MY], uint16_t max_x, uint16_t max_y);
-void place_object(int lines, int appearChance);	//if lines == 0: object will appear at random xy-Position
-int move_object(uint8_t type);
-int get_empty_obj_num(int objn);
+void place_object(int lines, int appearChance);		//places objects in lines on fieldscreen with a given appear chance, if lines == 0: object will appear at random position
+int move_object(uint8_t type);						//moves the objects with given type 1 left or right/type 2 objects shoot; returns if player is gameover (line hits player-space)
+int get_empty_obj_num(int objn);					//searches for a free space in obj-array, starting at a given objectnummer; returns int to next free space
 uint16_t which_port(int socket);
 
-int max_y = 0, max_x = 0;
-
-void sig_handler(){
+void sig_handler(){									//if a user/system interrupts
 	printf("*** Server ended due to interrupt ***\n");		//printf may be interrupted but better than don't handling case
 	exit(EXIT_SUCCESS);
 }
@@ -146,17 +145,8 @@ int main(int argc, char **argv){
 		else{ //wants to become a spectator
 
 		}
-
 		close(new_client);
-
 	}
-
-/*TODO: EXIT STRATEGY
-	// Disconnect from client
-	ret = close(gamesocket);						//may cause error if child returns
-	if(ret < 0) error_handler(ERR_DISCONNECT);
-*/
-
 	return 0;
 }
 
@@ -168,7 +158,7 @@ void gameloop(int socket[], char playername[]){
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 20;				//number of while-circles until new objects appear
 	int appearChance = 20;				//chance that an object appears at a position
-	static uint8_t recursive = 0;
+	static uint8_t recursive = 0;		//check if game is restarted
 	static int client = -1;
 	int spectator[MAXSPECT]={0};
 	int numspect = 0;
@@ -418,7 +408,7 @@ int move_object(uint8_t type){
 	int max_y = 0;
 
 	if(type == 1){
-		//set x-move direction
+		//set x-move direction depending on given direction
 		if(dir == 'r') xOffset = 1;		//move right
 		else xOffset = -1;				//move left
 
@@ -427,7 +417,7 @@ int move_object(uint8_t type){
 			if(s_obj[i].type == 1 && s_obj[i].life > 0){		//check if it is a wandering object still alive
 				if((dir == 'r' && s_obj[i].pos[0]+1 >= MX) || (dir == 'l' && s_obj[i].pos[0] <= 0)){		//if wandering right/left would hit wall
 					yOffset = 1;
-					xOffset = 0;		//no x-move when y-move
+					xOffset = 0;								//no x-move when y-move
 					break;
 				}
 			}
@@ -435,7 +425,7 @@ int move_object(uint8_t type){
 
 		//wander right or left
 		for(int i = 0; i < (MX*MY); i++){
-			if(s_obj[i].type == 1 && s_obj[i].life > 0){	//check if it is a wandering object still alive
+			if(s_obj[i].type == 1 && s_obj[i].life > 0){		//check if it is a wandering object still alive
 				s_obj[i].pos[0] = s_obj[i].pos[0] + xOffset;
 				s_obj[i].pos[1] = s_obj[i].pos[1] + yOffset;
 				s_obj[i].status = UPDATED;
@@ -443,12 +433,11 @@ int move_object(uint8_t type){
 					gameover = 1;
 					break;
 				}
-
-				if(s_obj[i].pos[1] > max_y) max_y = s_obj[i].pos[1];
+				if(s_obj[i].pos[1] > max_y) max_y = s_obj[i].pos[1];		//get maximum y-position of objects
 			}
 		}
 
-		//Randomly spawn an object 2
+		//Randomly spawn an object type 2
 		int shoot = rand() % 100;
 		int currMaxY = 0;
 		int currMinX = MX;
@@ -470,29 +459,29 @@ int move_object(uint8_t type){
 
 		}
 
-
 		//make new line of objects at top
 		if(yOffset == 1){
 			place_object(1, appearChance);
 			if(dir == 'r') dir = 'l';		//change direction for next time
 			else dir = 'r';
 		}
-	}else if(type == 2){
-
+	}
+	else if(type == 2){
 		for(int i = 0; i < (MX*MY); i++){
 			if(s_obj[i].type == 2 && s_obj[i].life > 0){		//check if it is a falling object and still alive
 				if(test_for_collision(s_obj[i].pos, s_player.pos, 0, 1)){
 					s_obj[i].life = 0;
 					gameover = 1;
-				}else if(s_obj[i].pos[1] < (MY - 1) ){
+				}
+				else if(s_obj[i].pos[1] < (MY - 1) ){			//object isn't on bottom position yet
 					s_obj[i].pos[1]++;
-				}else {
-					s_obj[i].life = 0;
+				}
+				else {
+					s_obj[i].life = 0;							//object hit bottom line
 				}
 				s_obj[i].status = UPDATED;
 			}
 		}
-
 	}
 	return gameover;
 }
@@ -500,27 +489,26 @@ int move_object(uint8_t type){
 void place_object(int lines, int appearChance){
 	int objn = 0;
 
-	if(lines == 0 && (rand() % 100) < appearChance){
+	if(lines == 0 && (rand() % 100) < appearChance){		//place a object somewhere
 		objn = get_empty_obj_num(objn);
 		s_obj[objn].pos[0] = rand() % MX;
 		s_obj[objn].pos[1] = rand() % MY;
 		//choose how hard it should be!
 		//s_obj[objn].life = (rand() % 3) +1;
 		s_obj[objn].life = 1;
-		s_obj[objn].type = 1;
-
+		s_obj[objn].type = 3;
 		s_obj[objn].status = UPDATED;
 	}
 
-	for(int i = 0; i < lines; i++){					//do it for given number of lines
-		for(int j = OBJ_LINE_L_OFFSET; j < (MX - OBJ_LINE_R_OFFSET); j++){			//do it from 3rd position in row to 3rd-last position in row
+	for(int i = 0; i < lines; i++){						//do it for given number of lines
+		for(int j = OBJ_LINE_L_OFFSET; j < (MX - OBJ_LINE_R_OFFSET); j++){		//do it from left to right offset
 			if((rand() % 100) < appearChance){
 				objn = get_empty_obj_num(objn);
 				s_obj[objn].pos[0] = j;
 				s_obj[objn].pos[1] = i;
-				s_obj[objn].type = 1;				//identify wandering objects
+				s_obj[objn].type = 1;					//identify wandering objects
 				//choose how hard it should be!
-		//s_obj[objn].life = (rand() % 3) +1;
+				//s_obj[objn].life = (rand() % 3) +1;
 				s_obj[objn].life = 1;
 				s_obj[objn].status = UPDATED;
 				objn++;
@@ -542,15 +530,16 @@ int launch_gameserver(int port){
 	struct sockaddr_in address;
 
 	// Fill in connection information
-	address.sin_family = AF_INET;			//IPv4 protocol
-	address.sin_addr.s_addr = INADDR_ANY; 	//Receive packets from any address
-	if(port != NEXT_AVAILABLE)address.sin_port = htons(port);			//Port number htons converts byte order
-	else address.sin_port = 0;
+	address.sin_family = AF_INET;									//IPv4 protocol
+	address.sin_addr.s_addr = INADDR_ANY; 							//Receive packets from any address
+	if(port != NEXT_AVAILABLE) address.sin_port = htons(port);		//if a port is given to function it is set
+	else address.sin_port = 0;										//get next free port from system
+	
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
 	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (gamesocket < 0) return ERR_CREATE_SOCKET;
 
-	// Bind Socket to process
+	// Bind Socket
 	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
 	if(ret < 0) return ERR_BIND;
 
