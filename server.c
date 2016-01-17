@@ -310,7 +310,7 @@ void gameloop(int socket[], char playername[]){
 	close(client);
 	for(int i = 0; i < MAXSPECT; i++)if(spectator[i] > 0)close(spectator[i]);
 	close(socket[0]);
-	shutdown(socket[1]);
+	shutdown(socket[1], SHUT_RDWR);
 	close(socket[1]);
 	exit(EXIT_SUCCESS);
 }
