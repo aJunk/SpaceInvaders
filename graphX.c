@@ -104,7 +104,10 @@ void init_graphix(){
 }
 
 void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t life, int spectators){
-	mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   |   Spectators %2d", playername, score, life, spectators);
+	/*number of spectators not implemented yet */
+	//if(spectators == -1) mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   | You are spectator", playername, score, life, spectators);		//what spectator sees
+	//else mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   |   Spectators %2d", playername, score, life, spectators);						//what client sees
+	mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d", playername, score, life, spectators);
 	wrefresh(scorescr);
 }
 
