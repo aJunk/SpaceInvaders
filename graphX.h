@@ -20,5 +20,6 @@ void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t
 int disp_infoscr(char mode);
 void print_statscr();
 void print_server_msg(pid_t pid, char status, char msg[], int i_info, char s_info[]);
+void draw_line(WINDOW* scr, uint16_t height_from_bottom);
 
 #endif

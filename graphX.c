@@ -8,6 +8,11 @@ WINDOW* statscr;
 WINDOW* scorescr;
 WINDOW* infoscr;
 
+void draw_line(WINDOW* scr, uint16_t height_from_bottom){
+  wattron( fieldscr, COLOR_PAIR(gray_colour));
+  for(int i = 1; i <= MX; i++)mvwaddch(scr, MY - height_from_bottom, i, '-');
+}
+
 void draw_obj(Object _obj[MX * MY], char character){
 
   for(int i = 0; i < MX * MY; i++){
@@ -82,8 +87,7 @@ void init_graphix(){
   init_pair(gray_colour, COLOR_WHITE, COLOR_BLACK);
   init_pair(obj_2_color, COLOR_MAGENTA, COLOR_BLACK);
 
-  wattron( fieldscr, COLOR_PAIR(gray_colour));
-  for(int i = 0; i <= MX; i++)mvwaddch(fieldscr, MY - HEIGHT_OF_PLAYER_SPACE, i, '-');
+  draw_line(fieldscr, HEIGHT_OF_PLAYER_SPACE);
 
   wattron(fieldscr, COLOR_PAIR(bkg_colour));
   wattron(statscr, COLOR_PAIR(bkg_colour));

@@ -222,7 +222,7 @@ void gameloop(int socket[], char playername[]){
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
 		//transmit TCP package
-//TODO: Calculate size of container to send!!!!!!
+  //TODO: Calculate size of container to send!!!!!!
 		ret = send(client, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		if(ret <= 0){
 			free(server_data_exchange_container);
@@ -242,11 +242,15 @@ void gameloop(int socket[], char playername[]){
 		}
 		for(i=0; i < MAXSPECT; i++){
 			if(spectator[i] != 0){
-					ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-					if(ret <= 0){
+					uint8_t tmp_byte = 0;
+					ret = recv(spectator[i], &tmp_byte, sizeof(tmp_byte), 0);
+					if(ret > 0){
+						close(spectator[i]);
 						spectator[i]= 0;
 						anzspect--;
 						print_server_msg(pid, INFO, "Spectator disconected. Total spectators: ", anzspect, "");
+					}else{
+						ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}
 			}
 		}
@@ -464,7 +468,7 @@ int move_object(uint8_t type){
 				if(test_for_collision(s_obj[i].pos, s_player.pos, 0, 1)){
 					s_obj[i].life = 0;
 					gameover = 1;
-				}else if(s_obj[i].pos[1] < MY ){
+				}else if(s_obj[i].pos[1] < (MY - 1) ){
 					s_obj[i].pos[1]++;
 				}else {
 					s_obj[i].life = 0;

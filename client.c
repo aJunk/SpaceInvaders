@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 	if(ret < 0) error_handler(ERR_SEND);
 
 	uint16_t buf = 0;
-	
+
 	switch(role){
 		case ACTIVE_PLAYER:
 			//recive new gameport
@@ -195,6 +195,7 @@ void gameloop(int gamesocket){
 		//wclear(fieldscr);
 		//wborder(fieldscr, '|', '|', '-', '-', '+', '+', '+', '+');
 		//draw stuff
+		draw_line(fieldscr, HEIGHT_OF_PLAYER_SPACE);
 		draw_player(&c_player, 'o');
 		draw_obj(c_obj, 'X');
 		draw_shot(c_shots, '|');
@@ -406,7 +407,9 @@ void spectate(int socket){
 
 			if(ch == 'q'){						//quit game
 				ret = disp_infoscr(ch);
-				if(ret == 'y'){					//really exit
+				if(ret == 'y'){
+					uint8_t tmp_byte = 255;
+					send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
 					close(socket);
 					endwin();
 					exit(EXIT_SUCCESS);
