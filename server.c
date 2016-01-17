@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
 		if(new_client < 0) error_handler(ERR_CONNECT);
 
-
+		numgames = check_alive(game_mem);
 		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
 
 		//get playername from client
@@ -111,18 +111,18 @@ int main(int argc, char **argv) {
 				strcpy(game_mem[i].name,playername);
 				game_mem[i].pid = pid;
 				game_mem[i].port = tmp_port;
-				close(new_client);
 			}
 		}else{ //wants to become a spectator
 			//printf("MASTER >> ");
 			//printf("making new client spectator\n!");
-
+			//client already knows where to conect to
 
 
 			//TODO:ask client which game he wants so view and give him the corresponding port
 
 		}
 
+		close(new_client);
 
 	}
 
