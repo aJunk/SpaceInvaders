@@ -70,15 +70,15 @@ int main(int argc, char **argv) {
 	// Get connections
 	while(1){
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
-		if(new_client < 0) error_handler(ERR_CONNECT);
-		print_server_msg(0, SUCCESS, "Client connected", 0, "");
+		if(new_client < 0) print_server_msg(0, ERROR, "Accept failed", 0, "");		//error_handler(ERR_CONNECT);
+		else print_server_msg(0, SUCCESS, "Client connected", 0, "");
 		
 		numgames = check_alive(game_mem);
 		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
 
 		//get playername from client
 		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
-		if(msgSize <= 0) error_handler(ERR_RECV);
+		if(msgSize <= 0) print_server_msg(0, ERROR, "Receiving playername failed", 0, "");		//error_handler(ERR_RECV)
 
 
 		if(strlen(playername) != 0){ //player wants to start a new game
@@ -87,11 +87,11 @@ int main(int argc, char **argv) {
 			print_server_msg(0, INFO, "Client wants to play. Playername: ", 0, playername);
 			
 			numgames = check_alive(game_mem);
-			if(numgames >= MAXGAMES) error_handler(ERR_MAX_GAMES);	//TODO: HANDLE BETTER																//TODO: make errorhandler!!
+			if(numgames >= MAXGAMES) print_server_msg(0, ERROR, "Receiving playername failed", 0, ""); 		//error_handler(ERR_MAX_GAMES);	//TODO: HANDLE BETTER																//TODO: make errorhandler!!
 
 			//creating new socket bound to any available port
 			new_socket = launch_gameserver(NEXT_AVAILABLE);
-			if(new_socket < 0) error_handler(new_socket);
+			if(new_socket < 0) print_server_msg(0, ERROR, "Launching gameserver failed. Returned: ", new_socket, "");			//error_handler(new_socket);
 			//looking up the port the socket was bound to and sending it to the client.
 			uint16_t tmp_port = which_port(new_socket);
 
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
 			// Create child process
 			pid = fork();
-			if(pid < 0) error_handler(ERR_FORK);
+			if(pid < 0) print_server_msg(0, ERROR, "Forking failed", 0, "");			//error_handler(ERR_FORK);
 
 			if (pid == 0){
 				close(gamesocket);
