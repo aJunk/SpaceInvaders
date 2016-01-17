@@ -250,9 +250,10 @@ void gameloop(int socket[], char playername[]){
 						anzspect--;
 						print_server_msg(pid, INFO, "Spectator disconected. Total spectators: ", anzspect, "");
 					}else if(ret == 1){
-						ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
+						//ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}else{
 						//NOTHING TO DO HERE
+						ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}
 			}
 		}
