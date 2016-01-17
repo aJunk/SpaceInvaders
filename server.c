@@ -111,14 +111,10 @@ int main(int argc, char **argv) {
 				strcpy(game_mem[i].name,playername);
 				game_mem[i].pid = pid;
 				game_mem[i].port = tmp_port;
+				close(new_socket);
 			}
-		}else{ //wants to become a spectator
-			//printf("MASTER >> ");
-			//printf("making new client spectator\n!");
-			//client already knows where to conect to
-
-
-			//TODO:ask client which game he wants so view and give him the corresponding port
+		}
+		else{ //wants to become a spectator
 
 		}
 
