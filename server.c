@@ -93,10 +93,10 @@ int main(int argc, char **argv) {
 
 			//creating new gamesocket bound to any available port
 			new_socket[0] = launch_gameserver(NEXT_AVAILABLE);
-			f(new_socket[0] < 0) print_server_msg(0, ERROR, "Launching gameserver failed. Returned: ", new_socket[0], "");			//error_handler(new_socket);
+			if(new_socket[0] < 0) print_server_msg(0, ERROR, "Launching gameserver failed. Returned: ", new_socket[0], "");			//error_handler(new_socket);
 			//creating new spectatorsocket bound to any available port
 			new_socket[1] = launch_gameserver(NEXT_AVAILABLE);
-			f(new_socket[1] < 0) print_server_msg(0, ERROR, "Creating spectatorsocket failed. Returned: ", new_socket[1], "");			//error_handler(new_socket);
+			if(new_socket[1] < 0) print_server_msg(0, ERROR, "Creating spectatorsocket failed. Returned: ", new_socket[1], "");			//error_handler(new_socket);
 			//cahange spectatorsocket to nonblocking mode
 			ret = fcntl(new_socket[1], F_SETFL, fcntl(new_socket[1], F_GETFL, 0) | O_NONBLOCK);
 			if (ret == -1) perror("calling fcntl");																									//TODO: Errorhandler
