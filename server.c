@@ -163,9 +163,11 @@ void gameloop(int socket, char playername[]){
 	s_player.amunition = 1;
 	s_player.instructions = 0;
 
-	s_shots[0].pos[0] = 0;
-	s_shots[0].pos[1] = 0;
-	s_shots[0].active = 0;
+	for(int i = 0; i < AMUNITION; i++){
+		s_shots[i].pos[0] = 0;
+		s_shots[i].pos[1] = 0;
+		s_shots[i].active = 0;
+	}
 
 	for(int i = 0; i < MX*MY; i++){
 		s_obj[i].pos[0] = 0;
@@ -220,7 +222,7 @@ void gameloop(int socket, char playername[]){
 		else if(s_player.instructions & RESTART){
 			free(server_data_exchange_container);
 			endwin();
-			printf("GAME RESTARTET BY PLAYER\n");
+			printf("GAME RESTARTED BY PLAYER\n");
 			gameloop(socket,playername);
 			return;
 		}

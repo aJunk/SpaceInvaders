@@ -119,9 +119,9 @@ int disp_infoscr(char mode){
 
 	switch(mode){
 		case 'q': {		//quit
-			mvwprintw(infoscr, 1, 1, "Really quit game?");
-			mvwprintw(infoscr, 2, 1, "Press [y] to quit");
-			mvwprintw(infoscr, 3, 1, "      [n] to continue");
+			mvwprintw(infoscr, 1, 1, "   Really QUIT game?");
+			mvwprintw(infoscr, 2, 1, "   Press [y] to quit");
+			mvwprintw(infoscr, 3, 1, "         [n] to continue");
 			wrefresh(infoscr);
 			command = wgetch(infoscr);
 			if(command == 'y' || command == 'n') break;		//get back to mainloop where command is handled
@@ -129,9 +129,9 @@ int disp_infoscr(char mode){
 			break;
 			}
 		case 'r':{		//restart
-			mvwprintw(infoscr, 1, 1, "Really restart game?");
-			mvwprintw(infoscr, 2, 1, "Press [y] to restart");
-			mvwprintw(infoscr, 3, 1, "      [n] to continue game");
+			mvwprintw(infoscr, 1, 1, "    Really RESTART game?");
+			mvwprintw(infoscr, 2, 1, "    Press [y] to restart");
+			mvwprintw(infoscr, 3, 1, "          [n] to continue");
 			wrefresh(infoscr);
 			command = wgetch(infoscr);
 			if(command == 'y' || command == 'n') break;		//get back to mainloop where command is handled
@@ -139,21 +139,20 @@ int disp_infoscr(char mode){
 			break;
 			}
 		case 'p': {		//pause
-			mvwprintw(infoscr, 1, 1, "Game paused");
-			mvwprintw(infoscr, 2, 1, "Press any key to continue");
+			mvwprintw(infoscr, 1, 1, "        Game PAUSED");
+			mvwprintw(infoscr, 2, 1, " Press any key to continue");
 			wrefresh(infoscr);
 			wgetch(infoscr);
 			break;
 			}
 		case 'g': {		//gameover
-			mvwprintw(infoscr, 1, 1, "Game over");
-			mvwprintw(infoscr, 2, 1, "Press [r] to start a new game");
-			mvwprintw(infoscr, 3, 1, "      [q] to quit");
+			mvwprintw(infoscr, 1, 1, "         GAME OVER!");
+			mvwprintw(infoscr, 2, 1, "    Press [r] to restart");
+			mvwprintw(infoscr, 3, 1, "          [q] to quit");
 			wrefresh(infoscr);
 			command = wgetch(infoscr);
-			if(command == 'r') disp_infoscr(command);			//restart game
-			else if(command == 'q') command = disp_infoscr(command);		//exit
-			else disp_infoscr('g');		//wrong command - display again
+			if(command == 'r' || command == 'q') break;				//restart game or exit - handled in main loop
+			else command = disp_infoscr('g');						//wrong command - display again
 			break;
 			}
 		default: break;
