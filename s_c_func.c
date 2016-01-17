@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include "communication.h"
 
-void error_handler(int error_no){	//ERRNO
+void error_handler(int error_no){
 	endwin();
 	switch(error_no) {
 		case ERR_CREATE_SOCKET: perror("Error creating socket"); break;
@@ -32,7 +32,7 @@ void error_handler(int error_no){	//ERRNO
 		case ERR_C_ARG: printf("ERROR: Invalid argument!\n\tUsage: client [-i <server ip>] [-p <server port>] [-n <player name>]\n"); break;
 		case ERR_INVALID_PORT: printf("ERROR: Invalid port! Port has to be between %d and %d.\n", PORT_MIN, PORT_MAX); break;
 		case ERR_PLAYERNAME: printf("Error: Your playername must not be longer than %d characters\n", PLAYER_NAME_LEN); break;
-		default: printf("ERROR\n");
+		default: printf("ERROR\n");		//if a unknown error_no is given
 	}
 	exit(EXIT_ERROR);
 }

@@ -105,26 +105,23 @@ void init_graphix(){
 
 void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t life, int spectators){
 	/*number of spectators not implemented yet */
-	//if(spectators == -1) mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   | You are spectator", playername, score, life, spectators);		//what spectator sees
-	//else mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d   |   Spectators %2d", playername, score, life, spectators);						//what client sees
 	mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d", playername, score, life, spectators);
 	wrefresh(scorescr);
 }
 
-void print_statscr(){		//--------------------------------------------------
+void print_statscr(){
 	mvwprintw(statscr, 0, 1, " ARROWS & SPACE      [p]ause | [r]estart | [q]uit ");
 	wrefresh(statscr);
 }
 
-//int disp_infoscr(char mode, int socket, Player *_player)
 int disp_infoscr(char mode){
 	int command = 0;
 
 	//save actual fieldscreen
 	scr_dump("fieldscreen_dump");
 
+	//draw infoscreen
 	wborder(infoscr, '|', '|', '-', '-', '+', '+', '+', '+');
-
 	switch(mode){
 		case 'q': {		//quit
 			mvwprintw(infoscr, 1, 1, "   Really QUIT game?");
@@ -133,7 +130,7 @@ int disp_infoscr(char mode){
 			wrefresh(infoscr);
 			command = wgetch(infoscr);
 			if(command == 'y' || command == 'n') break;		//get back to mainloop where command is handled
-			else disp_infoscr('q');							//wrong command - display again
+			else command = disp_infoscr('q');				//wrong command - display again
 			break;
 			}
 		case 'r':{		//restart
@@ -143,14 +140,14 @@ int disp_infoscr(char mode){
 			wrefresh(infoscr);
 			command = wgetch(infoscr);
 			if(command == 'y' || command == 'n') break;		//get back to mainloop where command is handled
-			else disp_infoscr('q');							//wrong command - display again
+			else command = disp_infoscr('r');				//wrong command - display again
 			break;
 			}
 		case 'p': {		//pause
 			mvwprintw(infoscr, 1, 1, "        Game PAUSED");
 			mvwprintw(infoscr, 2, 1, " Press any key to continue");
 			wrefresh(infoscr);
-			wgetch(infoscr);
+			wgetch(infoscr);								//wait until a key is pressed
 			break;
 			}
 		case 'g': {		//gameover
@@ -159,8 +156,8 @@ int disp_infoscr(char mode){
 			mvwprintw(infoscr, 3, 1, "          [q] to quit");
 			wrefresh(infoscr);
 			command = wgetch(infoscr);
-			if(command == 'r' || command == 'q') break;				//restart game or exit - handled in main loop
-			else command = disp_infoscr('g');						//wrong command - display again
+			if(command == 'r' || command == 'q') break;		//restart game or exit - handled in main loop
+			else command = disp_infoscr('g');				//wrong command - display again
 			break;
 			}
 		default: break;
@@ -181,7 +178,7 @@ void print_server_msg(pid_t pid, char status, char msg[], int i_info, char s_inf
 	else if(status == INFO) printf(" INFO    |");
 	else 					printf(" ERROR   |");
 	printf(" %s", msg);
-	if(i_info != 0) printf(" %d", i_info);
+	if(i_info != 0) printf(" %d", i_info);					//if optional int or string info is given
 	if(strcmp(s_info, "") != 0) printf(" %s", s_info);
 	printf("\n");
 }
