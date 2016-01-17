@@ -30,10 +30,10 @@ char playername[PLAYER_NAME_LEN + 1] = "";
 int sound_queue;
 
 //clientside functions
-int connect2server(char ip[16], int port);			//creates a socket and connects to server with given ip and port; return socket-fd	
+int connect2server(char ip[16], int port);			//creates a socket and connects to server with given ip and port; return socket-fd
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
-void gameloop(int gamesocket);						//loop where game is executed, send/recv to player takes place		
+void gameloop(int gamesocket);						//loop where game is executed, send/recv to player takes place
 void spectate(int socket, char playername[]);
 
 void sig_handler(){									//if a user/system interrupts
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 	sigemptyset(&sig.sa_mask);
 	sigaction(SIGINT, &sig, NULL);
 	sigaction(SIGPIPE, &sig, NULL);
-	
+
  sound_queue = open("S_QUEUE", O_RDWR);
 
 	// Check arguments
@@ -369,91 +369,84 @@ void spectate(int socket, char playername[]){
 	int ch;
 	uint8_t tmp_byte = 0;
 
-	  // GAME STARTS HERE ------------------------------------------------
-		  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-		  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-		  init_graphix();
-		  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
-		  usleep(DELAY);
+  // GAME STARTS HERE ------------------------------------------------
+  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+  init_graphix();
+  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+  usleep(DELAY);
 
-			//request first packet
-			tmp_byte = ACK;
-			send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
+	//request first packet
+	tmp_byte = ACK;
+	send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
 
-	  //BEGIN MAIN LOOP-------------------------------------------------------------
-		while(1) {
-		//clientside -> start
+  //BEGIN MAIN LOOP-------------------------------------------------------------
+	while(1) {
+	  //clientside -> start
+		ch = wgetch(fieldscr);
 
+		if(ch == 'q'){						//quit game
+			ret = disp_infoscr(ch);
+			if(ret == 'y'){
+			 	tmp_byte = ENDOFCON;
+				send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
+				close(socket);
+				endwin();
+				exit(EXIT_SUCCESS);
+			}/*else {
 
-			ch = wgetch(fieldscr);
-
-
-			if(ch == 'q'){						//quit game
-				ret = disp_infoscr(ch);
-				if(ret == 'y'){
-				 	tmp_byte = ENDOFCON;
-					send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
-					close(socket);
-					endwin();
-					exit(EXIT_SUCCESS);
-				}else {
-
-				}		//TODO!! RESTORE SCREEN DUMP!!
-			}
-
-			//acknowloedge that we are ready to receive!
-			//GET TCP PACKAGE
-			//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-			msgSize = recv(socket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-			tmp_byte = ACK;
-			send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
-
-			if(msgSize <= 0){
-				if(errno != EWOULDBLOCK){
-					error_handler(-8);
-				}else{
-					usleep(500000);
-					continue;
-				}
-			}
-
-			//Look if player is game over
-			if(((Player*)client_data_exchange_container)->life == 0){
-					c_player.instructions |= QUIT;
-					close(socket);
-					endwin();
-					exit(EXIT_SUCCESS);
-			}
-
-			//DECODE TRANSMITTED PACKAGE
-			if(errno != EWOULDBLOCK) handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
-			//DECODE END!
-
-			c_player.instructions = 0;
-
-			draw_line(fieldscr, HEIGHT_OF_PLAYER_SPACE);
-			draw_player(&c_player, 'o');
-			draw_obj(c_obj, 'X');
-			draw_shot(c_shots, '|');
-			frame_change();
-			wrefresh(fieldscr);
-			draw_player(&c_player, ' ');
-			draw_obj(c_obj, ' ');
-			draw_shot(c_shots, ' ');
-			print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
-			usleep(DELAY);
-
-
+			}		//TODO!! RESTORE SCREEN DUMP!! */
 		}
 
-	  beep();
-	  free(client_data_exchange_container);
-	  endwin();
+		//GET TCP PACKAGE
+		msgSize = recv(socket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+		//acknowloedge that we are ready to receive!
+		tmp_byte = ACK;
+		send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
 
-		// Disconnect from server
-		ret = close(socket);
-		if(ret < 0) error_handler(-29);
+		if(msgSize <= 0){
+			if(errno != EWOULDBLOCK){
+				error_handler(-8);
+			}else{
+				usleep(500000);
+				continue;
+			}
+		}
 
-		return;
+		//Look if player is game over
+		if(((Player*)client_data_exchange_container)->life == 0){
+				c_player.instructions |= QUIT;
+				close(socket);
+				endwin();
+				exit(EXIT_SUCCESS);
+		}
+
+		//DECODE TRANSMITTED PACKAGE
+		if(errno != EWOULDBLOCK) handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
+		//DECODE END!
+
+		c_player.instructions = 0;
+
+		draw_line(fieldscr, HEIGHT_OF_PLAYER_SPACE);
+		draw_player(&c_player, 'o');
+		draw_obj(c_obj, 'X');
+		draw_shot(c_shots, '|');
+		frame_change();
+		wrefresh(fieldscr);
+		draw_player(&c_player, ' ');
+		draw_obj(c_obj, ' ');
+		draw_shot(c_shots, ' ');
+		print_scorescr(playername, c_player.score, c_player.life, 0);
+		usleep(DELAY);
+	}
+																																			//never reached!! delete?
+  beep();
+  free(client_data_exchange_container);
+  endwin();
+
+	// Disconnect from server
+	ret = close(socket);
+	if(ret < 0) error_handler(-29);
+
+	return;
 
 }
