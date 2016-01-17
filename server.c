@@ -244,7 +244,7 @@ void gameloop(int socket[], char playername[]){
 			if(spectator[i] != 0){
 					uint8_t tmp_byte = 0;
 					ret = recv(spectator[i], &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
-					if(ret == 0 || (ret == 1) && (tmp_byte == ENDOFCON)){
+					if(ret == 0 || ((ret == 1) && (tmp_byte == ENDOFCON))){
 						close(spectator[i]);
 						spectator[i]= 0;
 						anzspect--;
