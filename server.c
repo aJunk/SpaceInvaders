@@ -243,7 +243,7 @@ void gameloop(int socket[], char playername[]){
 		for(i=0; i < MAXSPECT; i++){
 			if(spectator[i] != 0){
 					uint8_t tmp_byte = 0;
-					ret = recv(spectator[i], &tmp_byte, sizeof(tmp_byte), 0);
+					ret = recv(spectator[i], &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
 					if(ret > 0){
 						close(spectator[i]);
 						spectator[i]= 0;

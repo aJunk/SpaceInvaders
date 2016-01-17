@@ -368,12 +368,34 @@ void spectate(int socket, char playername[]){
 		while(1) {
 		//clientside -> start
 
+
+			ch = wgetch(fieldscr);
+
+
+			if(ch == 'q'){						//quit game
+				ret = disp_infoscr(ch);
+				if(ret == 'y'){
+					uint8_t tmp_byte = 255;
+					send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
+					close(socket);
+					endwin();
+					exit(EXIT_SUCCESS);
+				}else {
+
+				}		//TODO!! RESTORE SCREEN DUMP!!
+			}
+
 			//GET TCP PACKAGE
 			//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-			msgSize = recv(socket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+			msgSize = recv(socket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 
 			if(msgSize <= 0){
-				if(errno != EWOULDBLOCK)error_handler(-8);
+				if(errno != EWOULDBLOCK){
+					error_handler(-8);
+				}else{
+					usleep(500000);
+					continue;
+				}
 			}
 
 			//Look if player is game over
@@ -401,21 +423,6 @@ void spectate(int socket, char playername[]){
 			print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
 			usleep(DELAY);
 
-			ch = wgetch(fieldscr);
-
-
-			if(ch == 'q'){						//quit game
-				ret = disp_infoscr(ch);
-				if(ret == 'y'){
-					uint8_t tmp_byte = 255;
-					send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
-					close(socket);
-					endwin();
-					exit(EXIT_SUCCESS);
-				}else {
-
-				}		//TODO!! RESTORE SCREEN DUMP!!
-			}
 
 		}
 
