@@ -71,12 +71,12 @@ int main(int argc, char **argv) {
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
 		if(new_client < 0) error_handler(ERR_CONNECT);
 
-		//get playername from client
-		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
-		if(msgSize <= 0) error_handler(ERR_RECV);
 
 		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
 
+		//get playername from client
+		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
+		if(msgSize <= 0) error_handler(ERR_RECV);
 
 
 		if(strlen(playername) != 0){ //player wants to start a new game

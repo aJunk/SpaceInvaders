@@ -64,9 +64,7 @@ int main(int argc, char **argv) {
 	gamesocket = connect2server(ip, port);
 	if(gamesocket < 0) error_handler(gamesocket);
 
-	//Send playername to server
-	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
-	if(ret < 0) error_handler(ERR_SEND);
+//old payername
 
 	init_graphix();
 
@@ -95,14 +93,20 @@ int main(int argc, char **argv) {
 
 	if(ch == 'n'){
 		role = ACTIVE_PLAYER;
+		if(strlen(playername)==0) strcpy(playername,"PLAYERNAME");
 	}else{
 		role = SPECTATOR;
 		role |= ch;
+		strcpy(playername,""); //send empty playername
 	}
 	endwin();
 
-	ret = send(gamesocket, &role, sizeof(role), 0);
+	//Send playername to server
+	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
 	if(ret < 0) error_handler(ERR_SEND);
+
+//	ret = send(gamesocket, &role, sizeof(role), 0);
+//	if(ret < 0) error_handler(ERR_SEND);
 
 
 	uint16_t buf = 0;
@@ -163,7 +167,7 @@ void gameloop(int gamesocket){
 			if(ret == 'q'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(ERR_SEND);			
+					if(ret < 0) error_handler(ERR_SEND);
 				break;
 			}
 			else if(ret == 'r'){			//start new game
@@ -219,7 +223,7 @@ void gameloop(int gamesocket){
 			if(ret == 'y'){						//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(ERR_SEND);		
+					if(ret < 0) error_handler(ERR_SEND);
 				free(client_data_exchange_container);
 				gameloop(gamesocket);
 				break;
