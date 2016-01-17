@@ -420,6 +420,7 @@ void spectate(int socket, char playername[]){
 
 			c_player.instructions = 0;
 
+			draw_line(fieldscr, HEIGHT_OF_PLAYER_SPACE);
 			draw_player(&c_player, 'o');
 			draw_obj(c_obj, 'X');
 			draw_shot(c_shots, '|');
