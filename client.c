@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 			else error_handler(ERR_PLAYERNAME);
 		}
 	}
-	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
+	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(ERR_INVALID_PORT);
 
 	//Connect
 	gamesocket = connect2server(ip, port);
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 
 	//Send playername to server
 	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
-	if(ret < 0) error_handler(-7);
+	if(ret < 0) error_handler(ERR_SEND);
 
 	init_graphix();
 
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 	endwin();
 
 	ret = send(gamesocket, &role, sizeof(role), 0);
-	if(ret < 0) error_handler(-7);
+	if(ret < 0) error_handler(ERR_SEND);
 
 
 	uint16_t buf = 0;
@@ -154,7 +154,7 @@ void gameloop(int gamesocket){
 		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 
 		if(msgSize <= 0){
-			if(errno != EWOULDBLOCK)error_handler(-8);
+			if(errno != EWOULDBLOCK)error_handler(ERR_RECV);
 		}
 
 		//Look if player is game over
@@ -163,13 +163,13 @@ void gameloop(int gamesocket){
 			if(ret == 'q'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);			
+					if(ret < 0) error_handler(ERR_SEND);			
 				break;
 			}
 			else if(ret == 'r'){			//start new game
 				c_player.instructions |= RESTART;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);
+					if(ret < 0) error_handler(ERR_SEND);
 				free(client_data_exchange_container);
 				gameloop(gamesocket);
 				return;
@@ -219,7 +219,7 @@ void gameloop(int gamesocket){
 			if(ret == 'y'){						//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);		
+					if(ret < 0) error_handler(ERR_SEND);		
 				free(client_data_exchange_container);
 				gameloop(gamesocket);
 				break;
@@ -231,7 +231,7 @@ void gameloop(int gamesocket){
 			if(ret == 'y'){					//really restart
 				c_player.instructions |= RESTART;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(-7);
+					if(ret < 0) error_handler(ERR_SEND);
 				free(client_data_exchange_container);
 				gameloop(gamesocket);
 				return;
@@ -346,11 +346,11 @@ int connect2server(char ip[16], int port){
 
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
 	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
-	if(gamesocket < 0) return -3;
+	if(gamesocket < 0) return ERR_CREATE_SOCKET;
 
 	// Connect to server
 	ret = connect(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0) return -22;
+	if(ret < 0) return ERR_CONNECT;
 
 	return gamesocket;
 }

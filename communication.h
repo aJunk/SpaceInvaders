@@ -96,8 +96,22 @@
 
 #define HEIGHT_OF_PLAYER_SPACE 2
 
-//ERRORS
-#define ERR_PLAYERNAME -23
+//ERRORS sockets 1-10; connection 11-20; server 21-30; client 31-40
+#define ERR_CREATE_SOCKET -1
+#define ERR_BIND -2
+#define ERR_LISTENER -3
+#define ERR_FORK -4
+
+#define ERR_CONNECT -11
+#define ERR_DISCONNECT -12
+#define ERR_SEND -13
+#define ERR_RECV -14
+
+#define ERR_S_ARG -21
+#define ERR_MAX_GAMES -22
+#define ERR_C_ARG -31
+#define ERR_INVALID_PORT -32
+#define ERR_PLAYERNAME -33
 
 //Special characters for non-standard objects
 #define OP_SHOT '$'

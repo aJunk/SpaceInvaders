@@ -58,9 +58,9 @@ int main(int argc, char **argv) {
 	// Check arguments
 	if(argc > 2){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
-		else error_handler(-1);
+		else error_handler(ERR_S_ARG);
 	}
-	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(-2);
+	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(ERR_INVALID_PORT);
 
 	// Launch gameserver
 	gamesocket = launch_gameserver(port);
@@ -69,11 +69,11 @@ int main(int argc, char **argv) {
 	// Get connections
 	while(1){
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
-		if(new_client < 0) error_handler(-6);
+		if(new_client < 0) error_handler(ERR_CONNECT);
 
 		//get playername from client
 		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
-		if(msgSize <= 0) error_handler(-8);
+		if(msgSize <= 0) error_handler(ERR_RECV);
 
 		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
 
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 		if(strlen(playername) != 0){ //player wants to start a new game
 			//check if maximal number of games is already reached
 			numgames = check_alive(game_mem);
-			if(numgames >= MAXGAMES) error_handler(-1);																	//TODO: make errorhandler!!
+			if(numgames >= MAXGAMES) error_handler(ERR_MAX_GAMES);	//TODO: HANDLE BETTER																//TODO: make errorhandler!!
 
 			//creating new socket bound to any available port
 			new_socket = launch_gameserver(NEXT_AVAILABLE);
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
 			// Create child process
 			pid = fork();
-			if(pid < 0) error_handler(-11);
+			if(pid < 0) error_handler(ERR_FORK);
 
 			if (pid == 0){
 				close(gamesocket);
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 /*TODO: EXIT STRATEGY
 	// Disconnect from client
 	ret = close(gamesocket);						//may cause error if child returns
-	if(ret < 0) error_handler(-9);
+	if(ret < 0) error_handler(ERR_DISCONNECT);
 */
 
 	return 0;
@@ -144,7 +144,7 @@ void gameloop(int socket, char playername[]){
 
 	//waiting for client to connect!
 	int client = accept(socket, (struct sockaddr *) NULL, NULL);
-	if(client < 0) error_handler(-6);
+	if(client < 0) error_handler(ERR_CONNECT);
 	//final handshake
 	uint16_t tmp_int = 22;
 	ret = send(client, &tmp_int, sizeof(uint16_t), 0);
@@ -206,7 +206,7 @@ void gameloop(int socket, char playername[]){
 		ret = send(client, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		if(ret < 0){
 			free(server_data_exchange_container);
-			error_handler(-7);
+			error_handler(ERR_SEND);
 		}
 
 
@@ -214,7 +214,7 @@ void gameloop(int socket, char playername[]){
 		msgSize = recv(client, &(s_player.instructions), sizeof(s_player.instructions), 0);
 		if(msgSize <= 0){
 			free(server_data_exchange_container);
-			error_handler(-8);
+			error_handler(ERR_RECV);
 		}
 
 		//check for quit, restart
@@ -496,15 +496,15 @@ int launch_gameserver(int port){
 	else address.sin_port = 0;
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
 	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (gamesocket < 0) return -3;
+	if (gamesocket < 0) return ERR_CREATE_SOCKET;
 
 	// Bind Socket to process
 	ret = bind(gamesocket, (struct sockaddr*)&address, sizeof(address));
-	if(ret < 0) return -4;
+	if(ret < 0) return ERR_BIND;
 
 	// Make listener (queue) for new connections
 	ret = listen(gamesocket, NUM_CONNECTIONS);
-	if(ret < 0) return -5;
+	if(ret < 0) return ERR_LISTENER;
 
 	return gamesocket;
 }
