@@ -356,6 +356,7 @@ void spectate(int socket, char playername[]){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
+	uint8_t tmp_byte = 0;
 
 	  // GAME STARTS HERE ------------------------------------------------
 		  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
@@ -375,7 +376,7 @@ void spectate(int socket, char playername[]){
 			if(ch == 'q'){						//quit game
 				ret = disp_infoscr(ch);
 				if(ret == 'y'){
-					uint8_t tmp_byte = 255;
+				 	tmp_byte = 0;
 					send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
 					close(socket);
 					endwin();
@@ -385,6 +386,9 @@ void spectate(int socket, char playername[]){
 				}		//TODO!! RESTORE SCREEN DUMP!!
 			}
 
+			//acknowloedge that we are ready to receive!
+			tmp_byte = 1;
+			send(socket, &tmp_byte, sizeof(tmp_byte), 0);
 			//GET TCP PACKAGE
 			//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 			msgSize = recv(socket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
