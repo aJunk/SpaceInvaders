@@ -71,15 +71,16 @@ int main(int argc, char **argv) {
 	// Get connections
 	while(1){
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
-		if(new_client < 0) error_handler(ERR_CONNECT);
-		print_server_msg(0, SUCCESS, "Client connected", 0, "");
+
+		if(new_client < 0) print_server_msg(0, ERROR, "Accept failed", 0, "");		//error_handler(ERR_CONNECT);
+		else print_server_msg(0, SUCCESS, "Client connected", 0, "");
 
 		numgames = check_alive(game_mem);
 		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
 
 		//get playername from client
 		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
-		if(msgSize <= 0) error_handler(ERR_RECV);
+		if(msgSize <= 0) print_server_msg(0, ERROR, "Receiving playername failed", 0, "");		//error_handler(ERR_RECV)
 
 
 		if(strlen(playername) != 0){ //player wants to start a new game
@@ -88,14 +89,14 @@ int main(int argc, char **argv) {
 			print_server_msg(0, INFO, "Client wants to play. Playername: ", 0, playername);
 
 			numgames = check_alive(game_mem);
-			if(numgames >= MAXGAMES) error_handler(ERR_MAX_GAMES);	//TODO: HANDLE BETTER
+			if(numgames >= MAXGAMES) print_server_msg(0, ERROR, "Receiving playername failed", 0, ""); 		//error_handler(ERR_MAX_GAMES);	//TODO: HANDLE BETTER
 
 			//creating new gamesocket bound to any available port
 			new_socket[0] = launch_gameserver(NEXT_AVAILABLE);
-			if(new_socket[0] < 0) error_handler(new_socket[0]);
+			f(new_socket[0] < 0) print_server_msg(0, ERROR, "Launching gameserver failed. Returned: ", new_socket[0], "");			//error_handler(new_socket);
 			//creating new spectatorsocket bound to any available port
 			new_socket[1] = launch_gameserver(NEXT_AVAILABLE);
-			if(new_socket[1] < 0) error_handler(new_socket[1]);
+			f(new_socket[1] < 0) print_server_msg(0, ERROR, "Creating spectatorsocket failed. Returned: ", new_socket[1], "");			//error_handler(new_socket);
 			//cahange spectatorsocket to nonblocking mode
 			ret = fcntl(new_socket[1], F_SETFL, fcntl(new_socket[1], F_GETFL, 0) | O_NONBLOCK);
 			if (ret == -1) perror("calling fcntl");																									//TODO: Errorhandler
@@ -115,7 +116,7 @@ int main(int argc, char **argv) {
 
 			// Create child process
 			pid = fork();
-			if(pid < 0) error_handler(ERR_FORK);
+			if(pid < 0) print_server_msg(0, ERROR, "Forking failed", 0, "");			//error_handler(ERR_FORK);
 
 			if (pid == 0){
 				close(gamesocket);

@@ -169,7 +169,7 @@ int disp_infoscr(char mode){
 }
 
 void print_server_msg(pid_t pid, char status, char msg[], int i_info, char s_info[]){
-	printf(" #%4d |", pid);
+	printf(" #%5d |", pid);
 	if(status == SUCCESS) 	printf(" SUCCESS |");
 	else if(status == INFO) printf(" INFO    |");
 	else 					printf(" ERROR   |");
