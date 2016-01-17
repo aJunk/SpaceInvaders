@@ -244,16 +244,16 @@ void gameloop(int socket[], char playername[]){
 			if(spectator[i] != 0){
 					uint8_t tmp_byte = 0;
 					ret = recv(spectator[i], &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
-					if(ret == 0){
+					if(ret == 0 || (ret == 1) && (tmp_byte == ENDOFCON)){
 						close(spectator[i]);
 						spectator[i]= 0;
 						anzspect--;
 						print_server_msg(pid, INFO, "Spectator disconected. Total spectators: ", anzspect, "");
-					}else if(ret == 1){
-						//ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
+					}else if(tmp_byte == ACK){
+						ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}else{
 						//NOTHING TO DO HERE
-						ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
+						//ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}
 			}
 		}

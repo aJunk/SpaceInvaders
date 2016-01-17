@@ -123,6 +123,9 @@
 //Server port allocation
 #define NEXT_AVAILABLE 0
 
+#define ACK 1
+#define ENDOFCON 0
+
 typedef struct{
     char name[PLAYER_NAME_LEN + 1];
     pid_t pid;

@@ -365,6 +365,10 @@ void spectate(int socket, char playername[]){
 		  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
 		  usleep(DELAY);
 
+			//request first packet
+			tmp_byte = ACK;
+			send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
+
 	  //BEGIN MAIN LOOP-------------------------------------------------------------
 		while(1) {
 		//clientside -> start
@@ -376,7 +380,7 @@ void spectate(int socket, char playername[]){
 			if(ch == 'q'){						//quit game
 				ret = disp_infoscr(ch);
 				if(ret == 'y'){
-				 	tmp_byte = 0;
+				 	tmp_byte = ENDOFCON;
 					send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
 					close(socket);
 					endwin();
@@ -387,11 +391,11 @@ void spectate(int socket, char playername[]){
 			}
 
 			//acknowloedge that we are ready to receive!
-			//tmp_byte = 1;
-			//send(socket, &tmp_byte, sizeof(tmp_byte), 0);
 			//GET TCP PACKAGE
 			//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 			msgSize = recv(socket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
+			tmp_byte = ACK;
+			send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
 
 			if(msgSize <= 0){
 				if(errno != EWOULDBLOCK){
