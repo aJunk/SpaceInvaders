@@ -33,6 +33,9 @@
 #define MAXSPECT 5
 #define EXIT_ERROR 1
 #define EXIT_SUCCESS 0
+#define SUCCESS 0
+#define INFO 1
+#define ERROR -1
 
 //ncurses color functions
 #define bkg_colour 2
@@ -123,7 +126,8 @@
 typedef struct{
     char name[PLAYER_NAME_LEN + 1];
     pid_t pid;
-    int port;
+    uint16_t port;
+	uint16_t spectator_port;
 }Game;
 
 typedef struct {

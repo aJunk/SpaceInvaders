@@ -19,5 +19,6 @@ void draw_shot(Shot _shots[AMUNITION], char character);
 void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t life, int spectators);
 int disp_infoscr(char mode);
 void print_statscr();
+void print_server_msg(pid_t pid, char status, char msg[], int i_info, char s_info[]);
 
 #endif

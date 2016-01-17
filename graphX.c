@@ -1,6 +1,7 @@
 #include "graphX.h"
 #include <ncurses.h>
 #include <sys/types.h>
+#include <string.h>
 
 WINDOW* fieldscr;
 WINDOW* statscr;
@@ -165,4 +166,15 @@ int disp_infoscr(char mode){
 	scr_restore("fieldcreen_dump");
 
 	return command;
+}
+
+void print_server_msg(pid_t pid, char status, char msg[], int i_info, char s_info[]){
+	printf(" #%4d |", pid);
+	if(status == SUCCESS) 	printf(" SUCCESS |");
+	else if(status == INFO) printf(" INFO    |");
+	else 					printf(" ERROR   |");
+	printf(" %s", msg);
+	if(i_info != 0) printf(" %d", i_info);
+	if(strcmp(s_info, "") != 0) printf(" %s", s_info);
+	printf("\n");
 }

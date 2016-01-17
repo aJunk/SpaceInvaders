@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 	char ch = 0;
 	uint8_t role = 0;
 	int msgSize;
-	Game tmp_game_mem[MAXGAMES]={{{""},0,0}};
+	Game tmp_game_mem[MAXGAMES]={{{""},0,0,0}};
 
  sound_queue = open("S_QUEUE", O_RDWR);
 

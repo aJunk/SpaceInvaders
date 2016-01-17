@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 	int port = STD_PORT;
 	struct sockaddr_in address;
 	socklen_t addrLength = sizeof(address);
-	Game game_mem[MAXGAMES]={{{""},0,0}};
+	Game game_mem[MAXGAMES]={{{""},0,0,0}};
 	int pid = 0;
 	char playername[PLAYER_NAME_LEN+1]="";
 	int numgames = 0;
@@ -65,12 +65,14 @@ int main(int argc, char **argv) {
 	// Launch gameserver
 	gamesocket = launch_gameserver(port);
 	if(gamesocket < 0) error_handler(gamesocket);
-
+	print_server_msg(0, SUCCESS, "Gameserver launched. Port: ", port, "");
+	
 	// Get connections
 	while(1){
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
 		if(new_client < 0) error_handler(ERR_CONNECT);
-
+		print_server_msg(0, SUCCESS, "Client connected", 0, "");
+		
 		numgames = check_alive(game_mem);
 		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
 
@@ -81,6 +83,9 @@ int main(int argc, char **argv) {
 
 		if(strlen(playername) != 0){ //player wants to start a new game
 			//check if maximal number of games is already reached
+			
+			print_server_msg(0, INFO, "Client wants to play. Playername: ", 0, playername);
+			
 			numgames = check_alive(game_mem);
 			if(numgames >= MAXGAMES) error_handler(ERR_MAX_GAMES);	//TODO: HANDLE BETTER																//TODO: make errorhandler!!
 
@@ -95,7 +100,8 @@ int main(int argc, char **argv) {
 			//closing the connection (socket still open)
 			close(new_client);
 			//socket can now be given to child!
-
+			
+			print_server_msg(0, INFO, "New gameserver launched, port transmitted. Port: ", tmp_port, "");
 
 			// Create child process
 			pid = fork();
@@ -103,6 +109,7 @@ int main(int argc, char **argv) {
 
 			if (pid == 0){
 				close(gamesocket);
+				print_server_msg(0, INFO, "Temp socket disconnected", 0, "");
 				gameloop(new_socket,playername);
 			}
 			else{
@@ -136,21 +143,26 @@ void gameloop(int socket, char playername[]){
 	int msgSize = -1;
 	int loopCount = 0;					//count number of while-circles
 	int appearTime = 20;				//number of while-circles until new objects appear
-	int appearChance = 20;			//chance that an object appears at a position
+	int appearChance = 20;				//chance that an object appears at a position
 	static uint8_t recursive = 0;
 	static int client = -1;
+	pid_t pid = getpid();
+	
+	print_server_msg(pid, SUCCESS, "Gameloop entered. Playername:", 0, playername);
+	
 	//waiting for client to connect!
 	if(!recursive){
 		client = accept(socket, (struct sockaddr *) NULL, NULL);
 		//final handshake
 		uint16_t tmp_int = 22;
 		ret = send(client, &tmp_int, sizeof(uint16_t), 0);
+		print_server_msg(pid, SUCCESS, "Client connected, handshake sent", 0, "");
 	}
 	if(client < 0) error_handler(ERR_CONNECT);
 	recursive = 0;
 
-
-
+  //SERVERSIDE INIT
+	srand((unsigned) time(&t));
 	server_data_exchange_container = NULL;
 	server_res_buf = 0;
 	dir = 'r';
@@ -178,37 +190,26 @@ void gameloop(int socket, char playername[]){
 		s_obj[i].status = UPDATED;
 	}
 
-  //SERVERSIDE INIT
-	init_graphix();
-	print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
-
 	//add attributes
 	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
-	//create objects on random positions
-	srand((unsigned) time(&t));
-	/*for(int i = 0; i < 15; i++){
-		place_object(0, 60);
-	}*/
-
 	//create some objects in lines
 	place_object(3, appearChance);
-
+	
   //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
 		time(&currentTime);
-		//usleep(DELAY);
+		
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
 		//transmit TCP package
-	//TODO: Calculate size of container to send
+//TODO: Calculate size of container to send!!!!!!
 		ret = send(client, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		if(ret < 0){
 			free(server_data_exchange_container);
 			error_handler(ERR_SEND);
 		}
-
 
 		//get TCP package
 		msgSize = recv(client, &(s_player.instructions), sizeof(s_player.instructions), 0);
@@ -222,7 +223,7 @@ void gameloop(int socket, char playername[]){
 		else if(s_player.instructions & RESTART){
 			free(server_data_exchange_container);
 			endwin();
-			printf("GAME RESTARTED BY PLAYER\n");
+			print_server_msg(pid, INFO, "Game restarted", 0, "");
 			recursive = 1;
 			gameloop(socket,playername);
 			return;
@@ -233,42 +234,31 @@ void gameloop(int socket, char playername[]){
 		ret = update_player(&s_player, s_obj, MX, MY);
 		if(ret == 1) s_player.life--;
 
-
 		//update shots
 		shoot(s_shots, NULL, s_obj);
 
 		//move objects
 		if(loopCount == appearTime){
 			ret = move_object(1);
-			if(ret == 1) s_player.life--;			//set player-lifes to 0 --> let player know game over
+			if(ret == 1) s_player.life--;			//set player-lifes to 0 to let player know game over
 			loopCount = 0;
 		}
-
+		
 		//make falling objects faster than sideways moving ones!
 		if(loopCount%(appearTime/8) == (appearTime/8)-1){
 			ret = move_object(2);
 			if(ret == 1) s_player.life--;
 		}
 
-		draw_player(&s_player, 'o');
-		draw_obj(s_obj, 'X');
-		draw_shot(s_shots, '|');
-		//simple frame-change indicator
-		frame_change();
-
-		wrefresh(fieldscr);
-
-		draw_player(&s_player, ' ');
-		draw_obj(s_obj, ' ');
-		draw_shot(s_shots, ' ');
-		print_scorescr(playername, s_player.score, s_player.life, 0);		// TODO: change from 0 to number of spectators!
-
+		//display in server log when player game over
+		if(s_player.life == 0) print_server_msg(pid, INFO, "Player game over. Score/Name: ", s_player.score, playername);
+		
 		loopCount++;
 	}
 	beep();
 	free(server_data_exchange_container);
 	endwin();
-	printf("QUIT BY PLAYER\n");
+	print_server_msg(pid, SUCCESS, "Game quit, ended normally. Score/name:", s_player.score, playername);
 	exit(EXIT_SUCCESS);
 }
 
