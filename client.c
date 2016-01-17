@@ -64,8 +64,6 @@ int main(int argc, char **argv) {
 	gamesocket = connect2server(ip, port);
 	if(gamesocket < 0) error_handler(gamesocket);
 
-//old payername
-
 	init_graphix();
 
 	 msgSize = recv(gamesocket, &tmp_game_mem, sizeof(Game) * MAXGAMES, 0);
@@ -104,10 +102,6 @@ int main(int argc, char **argv) {
 	//Send playername to server
 	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
 	if(ret < 0) error_handler(ERR_SEND);
-
-//	ret = send(gamesocket, &role, sizeof(role), 0);
-//	if(ret < 0) error_handler(ERR_SEND);
-
 
 	uint16_t buf = 0;
 	msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
@@ -302,7 +296,6 @@ void init_shot(Player *_player, int input){
   }
 }
 
-
   //GET FUNCTION TO EXTERNAL FILE
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
 	if(mode == DISASSEMBLE){
@@ -329,7 +322,6 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
 			    }else{
 							write(sound_queue, "hit", 4);
 					}
-
 				}
 
 				obj[index].status = NO_CHANGE;
@@ -363,8 +355,6 @@ void spectate(int socket){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
-
-
 
 	  // GAME STARTS HERE ------------------------------------------------
 		  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
@@ -423,14 +413,10 @@ void spectate(int socket){
 					exit(EXIT_SUCCESS);
 				}else {
 
-
-
 				}		//TODO!! RESTORE SCREEN DUMP!!
 			}
 
 		}
-
-
 
 	  beep();
 	  free(client_data_exchange_container);
