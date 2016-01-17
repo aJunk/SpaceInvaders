@@ -34,7 +34,7 @@ int connect2server(char ip[16], int port);
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
 void gameloop(int gamesocket);
-void spectate(int socket);
+void spectate(int socket, char playername[]);
 
 int main(int argc, char **argv) {
 	int gamesocket;
@@ -87,16 +87,15 @@ int main(int argc, char **argv) {
 	timeout(1);
 	do{
 		ch = wgetch(fieldscr);
-	}while(ch != 'n' && ((ch - 48) > 9 || (ch - 48) < 0));
+	}while(ch != 'n' && ((ch - 48) > MAXGAMES || (ch - 48) < 0));
 
 	if(ch == 'n'){
 		role = ACTIVE_PLAYER;
-		if(strlen(playername)==0) strcpy(playername,"PLAYERNAME");
+		if(strlen(playername)==0) strcpy(playername,"ANON");
 	}else{ //SPECTATOR
 		role = SPECTATOR;																							//??
-		role |= ch;
 		//set choosen port																										// really necessary?
-		port=tmp_game_mem[0].port;																								//game hardcoded!!
+		port=tmp_game_mem[ch - 48].port;																								//game hardcoded!!
 		strcpy(playername,""); //send empty playername
 	}
 	endwin();
@@ -131,7 +130,7 @@ int main(int argc, char **argv) {
 			gamesocket = connect2server(ip, port);
 			if(gamesocket < 0) error_handler(gamesocket);
 
-			spectate(gamesocket);
+			spectate(gamesocket, tmp_game_mem[ch - 48].name);
 			break;
 	}
 
@@ -353,7 +352,7 @@ int connect2server(char ip[16], int port){
 	return gamesocket;
 }
 
-void spectate(int socket){
+void spectate(int socket, char playername[]){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
