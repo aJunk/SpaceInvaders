@@ -1,10 +1,10 @@
 /**************************************************************************
- * SPACEINVADORS GAME - CLIENT
- * Clientprogram for a TCP/IP based Spaceinvadors game for Linux and MacOS.
+ * SPACEINVADERS GAME - CLIENT
+ * Client-program for a TCP/IP based Spaceinvaders game for Linux and MacOS.
  * User can either start a new game or become a spectator of an ongoing game.
  *
  * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
- * UAS Technikum Wien, BMR14
+ * UAS Technikum Wien, BMR3_2014
  */
 #ifdef __linux__
 #define _POSIX_C_SOURCE 199309L

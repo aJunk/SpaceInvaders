@@ -1,3 +1,12 @@
+/**************************************************************************
+ * SPACEINVADERS GAME - server (header)
+ * Headerfile for a TCP/IP based Spaceinvaders game for Linux and MacOS.
+ * Provides several prototypes of functions for the server.
+ *
+ * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
+ * UAS Technikum Wien, BMR3_2014
+ */
+
 #include "communication.h"
 #include "graphX.h"
 

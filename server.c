@@ -1,10 +1,10 @@
 /**************************************************************************
- * SPACEINVADORS GAME - SERVER
- * Serverprogram for a TCP/IP based Spaceinvadors game for Linux and MacOS.
- * Allows up to 5 parallel games and aditional 5 spectators per game.
+ * SPACEINVADERS GAME - SERVER
+ * Server-program for a TCP/IP based Spaceinvaders game for Linux and MacOS.
+ * Allows up to 5 parallel games and additional 5 spectators per game.
  *
  * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
- * UAS Technikum Wien, BMR14
+ * UAS Technikum Wien, BMR3_2014
  */
 
 #ifdef __linux__
