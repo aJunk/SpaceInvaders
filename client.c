@@ -164,7 +164,7 @@ void gameloop(int gamesocket){
 	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  init_graphix();
-	  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+	  print_scorescr(playername, c_player.score, c_player.life);
 	  print_statscr();
 	  usleep(DELAY);
 
@@ -222,7 +222,7 @@ void gameloop(int gamesocket){
 		draw_player(&c_player, ' ');
 		draw_obj(c_obj, ' ');
 		draw_shot(c_shots, ' ');
-		print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+		print_scorescr(playername, c_player.score, c_player.life);
 
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
@@ -377,7 +377,7 @@ void spectate(int socket, char playername[]){
   // GAME STARTS HERE ------------------------------------------------
   client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
   init_graphix();
-  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+  print_scorescr(playername, c_player.score, c_player.life);
   usleep(DELAY);
 
 	//request first packet
@@ -386,20 +386,18 @@ void spectate(int socket, char playername[]){
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(1) {
-	  //clientside -> start
 		ch = wgetch(fieldscr);
 
-		if(ch == 'q'){						//quit game
+		//quit game?
+		if(ch == 'q'){
 			ret = disp_infoscr(ch);
 			if(ret == 'y'){
 			 	tmp_byte = ENDOFCON;
-				send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
+				send(socket, &tmp_byte, sizeof(tmp_byte), 0);
 				close(socket);
 				endwin();
 				exit(EXIT_SUCCESS);
-			}/*else {
-
-			}		//TODO!! RESTORE SCREEN DUMP!! */
+			}
 		}
 
 		//GET TCP PACKAGE
@@ -440,7 +438,7 @@ void spectate(int socket, char playername[]){
 		draw_player(&c_player, ' ');
 		draw_obj(c_obj, ' ');
 		draw_shot(c_shots, ' ');
-		print_scorescr(playername, c_player.score, c_player.life, 0);
+		print_scorescr(playername, c_player.score, c_player.life);
 		usleep(DELAY);
 	}
 																																			//never reached!! delete?
