@@ -297,7 +297,6 @@ void gameloop(int socket[], char playername[]){
 					}
 			}
 		}
-		//------
 
 		//get TCP package
 		msgSize = recv(client, &(s_player.instructions), sizeof(s_player.instructions), 0);
@@ -443,8 +442,6 @@ void handle_package(char *container, Player *player, Object obj[MX * MY], Shot s
     tmp = NULL;
 	}
 }
-
-
 
 
 int move_object(uint8_t type){
