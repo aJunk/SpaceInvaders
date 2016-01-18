@@ -191,7 +191,7 @@ void gameloop(int gamesocket){
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  init_graphix();
 	  print_scorescr(playername, c_player.score, c_player.life);
-	  print_statscr();
+	  print_statscr('p');
 	  usleep(DELAY);
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
@@ -416,9 +416,7 @@ void spectate(int socket, char playername[]){
 
 
   print_scorescr(playername, c_player.score, c_player.life);
-  char info[] = "press  \"q\" to exit";
-	mvwprintw(statscr, 0, MX/2 - strlen(info)/2, info);
-	wrefresh(statscr);
+  print_statscr('s');
   usleep(DELAY);
 
 	//request first packet

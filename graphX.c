@@ -116,8 +116,9 @@ void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t
 	wrefresh(scorescr);
 }
 
-void print_statscr(){
-	mvwprintw(statscr, 0, 1, " ARROWS & SPACE      [p]ause | [r]estart | [q]uit ");
+void print_statscr(char mode){
+	if(mode == 'p')	mvwprintw(statscr, 0, 1, " ARROWS & SPACE      [p]ause | [r]estart | [q]uit ");
+	else mvwprintw(statscr, 0, 1, " press  \"q\" to exit");
 	wrefresh(statscr);
 }
 

@@ -54,7 +54,7 @@ extern WINDOW* infoscr;
 
 void init_graphix();
 void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t life);		//top of field: prints playername, score and life
-void print_statscr();																		//bottom of field: prints possible commands
+void print_statscr(char mode);																//bottom of field: prints possible commands depending on mode
 int disp_infoscr(char mode);																//shows message on gameover/restart/quit; returns command entered by player
 void print_server_msg(pid_t pid, char status, char msg[], int i_info, char s_info[]);		//server logging; prints pid, SUCCESS/INFO/ERROR and a given message (optional int and infostr)
 void frame_change();
