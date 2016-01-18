@@ -1,4 +1,4 @@
-CFLAGS=-g -ansi -Wall -Wextra -Wfatal-errors -pedantic -pedantic-errors -std=gnu99 -m32
+CFLAGS= -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter
 INCLUDEFLAGES= -lncurses
 PNAME=invaders
 FETCHMEM=curl -L -O https://bintray.com/artifact/download/bruening/DrMemory/DrMemory-MacOS-1.8.1-0.tar.gz --progress-bar
@@ -35,13 +35,13 @@ game:
 	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
 
 server: clean
-		gcc graphX.c server.c s_c_func.c communication.c -o server -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
+		gcc graphX.c server.c communication.c -o server $(CFLAGS) -lncurses
 
 client: clean
-	 gcc graphX.c client.c communication.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DNOSOUND
+	 gcc graphX.c client.c communication.c -o client $(CFLAGS) -lncurses -DNOSOUND
 
 client_withsound: clean
-	 gcc client.c  graphX.c communication.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DSOUND
+	 gcc client.c  graphX.c communication.c -o client $(CFLAGS) -lncurses -DSOUND
 
 audio:
 	gcc audiodaemon.c -o adeamon -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES)
