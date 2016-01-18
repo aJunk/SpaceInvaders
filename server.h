@@ -1,22 +1,8 @@
-#ifndef SERVER_H_INCLUDED
-#define SERVER_H_INCLUDED
-
-#include <unistd.h>
-#include <ncurses.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <signal.h>
-#include "server.h"
 #include "communication.h"
 #include "graphX.h"
+
+#ifndef SERVER_H_INCLUDED
+#define SERVER_H_INCLUDED
 
 int launch_gameserver(int port);			//makes a socket, binds it and listens on given port (if NEXT_AVAILABLE is given it takes next available port); returns socket-fd
 void gameloop(int socket[],char playername[]);		//loop where game is executed, send/recv to player takes place

@@ -1,3 +1,6 @@
+#include "communication.h"
+#include "graphX.h"
+
 #ifndef CLIENT_H_INCLUDED
 #define CLIENT_H_INCLUDED
 
@@ -8,4 +11,4 @@ void gameloop(int gamesocket);			//loop where game is executed, send/recv to pla
 void spectate(int socket, char playername[]);		//loop for spectators, where data is recived and displayed
 void sig_handler();	  //if a user/system interrupts
 
-#endif CLIENT_H_INCLUDED
+#endif
