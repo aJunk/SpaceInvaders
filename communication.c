@@ -37,7 +37,7 @@ void handle_package(uint8_t *container, Player *player, Object obj[MX * MY], Sho
 
     memset(container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
     tmp = container;
-    memcpy(tmp, &player, sizeof(Player));
+    memcpy(tmp, player, sizeof(Player));
     tmp += sizeof(Player);
     memcpy(tmp, shots, sizeof(Shot) * AMUNITION);
     tmp += sizeof(Shot) * AMUNITION;
