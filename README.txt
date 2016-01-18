@@ -4,18 +4,15 @@
 |  __/| | | (_) | |  __/   <| |_| |_) |  __/\__ \ (__| | | | | |  __/ | |_) | |_| | | | | (_| |
 |_|   |_|  \___// |\___|_|\_\\__|_.__/ \___||___/\___|_| |_|_|  \___|_|_.__/ \__,_|_| |_|\__, |
               |__/                                                                       |___/ 
+
 Das Spiel „Space Invaders“ soll mit Hilfe von TCP/IP-Sockets implementiert werden.
 Die Spiel-Steuerung übernimmt ein Server-Prozess, der auf einem TCP-Port auf neue Spieler wartet.
 Verbindet sich ein Client mit dem Server werden sämtliche aktiven Spiele angezeigt und der Client
 kann auswählen, zu welchem er als Zuschauer verbunden werden will. Er kann auch ein neues Spiel
 starten, bei dem dann andere zuschauen können.
-             
 Die Spielfeldgröße wird im Zuge der Implementierung definiert. Im unteren Bereich befindet sich
 der Spieler. Dieser kann mithilfe der Pfeiltasten bewegt werden, jedoch maximal bis zu der
 Trennlinie. Er kann weiters mithilfe der Space-Taste Schüsse abgeben, um Gegner zu zerstören.
-Es befinden sich in diesem Bereich außerdem Hindernisse, die nicht durchfahren/durchschossen
-werden können (INFO: WURDE IM ZUGE DER IMPLEMENTIERUNG AUS SPIEL-SPASS-GRÜNDEN ENTFERNT, kann
-jedoch jederzeit wieder eingeführt werden - Funktion existiert).
 Am oberen Spielfeldrand erscheinen stetig in Reihen Gegner, welche zufällig platziert sind.
 Alle Gegner bilden ein Feld, das so lange auf eine Seite wandert, bis ein Gegner den Rand berührt.
 Dann erfolgt eine Bewegung nach unten und die Gegner bewegen sich in die entgegengesetzte Richtung,
@@ -23,7 +20,9 @@ wieder bis der andere Rand berührt wird, usw.
 Am oberen Rand wird der eigene Name, der Score (Punkte sammeln durch Abschießen von Gegnern)
 und die Anzahl der Leben angezeigt.
 			 
-Optional: Gegner schießen zu zufälligen Zeiten gezielt auf den Spieler
+Optional:
+ + Gegner schießen zu zufälligen Zeiten gezielt auf den Spieler
+ + Farbige Gegner, Schüsse, etc.
  _  __                     _ _ _                             
 | |/ /___  _ __ ___  _ __ (_) (_) ___ _ __ _   _ _ __   __ _ 
 | ' // _ \| '_ ` _ \| '_ \| | | |/ _ \ '__| | | | '_ \ / _` |
