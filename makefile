@@ -55,13 +55,13 @@ game:
 	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
 
 server: clean
-		gcc graphX.c server.c s_c_func.c -o server -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
+		gcc graphX.c server.c s_c_func.c communication.c -o server -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
 
 client: clean
-	gcc graphX.c client.c s_c_func.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DNOSOUND
+	 gcc graphX.c client.c communication.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DNOSOUND
 
 client_withsound: clean
-	gcc client.c s_c_func.c graphX.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DSOUND
+	 gcc client.c  graphX.c communication.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DSOUND
 
 
 testrand: clean
