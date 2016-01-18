@@ -311,7 +311,12 @@ void gameloop(int socket[], char playername[]){
 	endwin();
 	print_server_msg(pid, SUCCESS, "Game quit, ended normally. Score/name:", s_player.score, playername);
 	close(client);
-	for(int i = 0; i < MAXSPECT; i++)if(spectator[i] > 0)close(spectator[i]);
+	for(int i = 0; i < MAXSPECT; i++){
+		if(spectator[i] > 0){
+			
+			close(spectator[i]);
+		}
+	}
 	close(socket[0]);
 	shutdown(socket[1], SHUT_RDWR);
 	close(socket[1]);

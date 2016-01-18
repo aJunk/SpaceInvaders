@@ -66,19 +66,19 @@ int main(int argc, char **argv) {
 
 	// Check arguments
 	for(int i = 1; i < argc; i = i+2){
-		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0) error_handler(-21);		//Check if a wrong flag was entered
+		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0) error_handler(ERR_INVALID_ARGUMENT, EXIT);		//Check if a wrong flag was entered
 		if(strcmp(argv[i], "-i") == 0 && i+1 < argc) strcpy(ip, argv[i+1]);
 		if(strcmp(argv[i], "-p") == 0 && i+1 < argc) port = atoi(argv[i+1]);			//Convert string argument to int
 		if(strcmp(argv[i], "-n") == 0 && i+1 < argc){
 			if(strlen(argv[i+1]) <= PLAYER_NAME_LEN) strcpy(playername, argv[i+1]);			//Check if not too long
-			else error_handler(ERR_PLAYERNAME);
+			else error_handler(ERR_PLAYERNAME, EXIT);
 		}
 	}
-	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(ERR_INVALID_PORT);
+	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(ERR_INVALID_PORT, EXIT);
 
 	//Connect
 	gamesocket = connect2server(ip, port);
-	if(gamesocket < 0) error_handler(gamesocket);
+	if(gamesocket < 0) error_handler(gamesocket, EXIT);
 
 	init_graphix();
 
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
 
 	//Send playername to server
 	ret = send(gamesocket, playername, PLAYER_NAME_LEN + 1, 0);
-	if(ret < 0) error_handler(ERR_SEND);
+	if(ret < 0) error_handler(ERR_SEND, EXIT);
 
 	uint16_t buf = 0;
 
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 
 			//Connect
 			gamesocket = connect2server(ip, buf);
-			if(gamesocket < 0) error_handler(gamesocket);
+			if(gamesocket < 0) error_handler(gamesocket, EXIT);
 
 			//final handshake
 			buf = 0;
@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
 			close(gamesocket);
 			//conect to game as spectator
 			gamesocket = connect2server(ip, port);
-			if(gamesocket < 0) error_handler(gamesocket);
+			if(gamesocket < 0) error_handler(gamesocket, EXIT);
 
 			spectate(gamesocket, tmp_game_mem[ch - 48].name);
 			break;
@@ -162,23 +162,23 @@ void gameloop(int gamesocket){
 
 
   // GAME STARTS HERE ------------------------------------------------
-	  client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+	  if(client_data_exchange_container == NULL) client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  init_graphix();
-	  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+	  print_scorescr(playername, c_player.score, c_player.life);
 	  print_statscr();
 	  usleep(DELAY);
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(goon) {
-	//clientside -> start
 
 		//GET TCP PACKAGE
-		//memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 
 		if(msgSize <= 0){
-			if(errno != EWOULDBLOCK)error_handler(ERR_RECV);
+			if(errno != EWOULDBLOCK)error_handler(ERR_RECV, 0);
+			goon = 0;
+			continue;
 		}
 
 		//Look if player is game over
@@ -187,14 +187,14 @@ void gameloop(int gamesocket){
 			if(ret == 'q'){					//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(ERR_SEND);
-				break;
+				if(ret < 0) error_handler(ERR_SEND, 0);
+				goon = 0;
+				continue;
 			}
 			else if(ret == 'r'){			//start new game
 				c_player.instructions |= RESTART;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(ERR_SEND);
-				free(client_data_exchange_container);
+				if(ret < 0) error_handler(ERR_SEND, 0);
 				gameloop(gamesocket);
 				goon = 0;
 				continue;
@@ -224,7 +224,7 @@ void gameloop(int gamesocket){
 		draw_player(&c_player, ' ');
 		draw_obj(c_obj, ' ');
 		draw_shot(c_shots, ' ');
-		print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+		print_scorescr(playername, c_player.score, c_player.life);
 
 		//Delay to reduce cpu-load
 		//TODO: time accurately to a certain number of updates per second
@@ -243,7 +243,7 @@ void gameloop(int gamesocket){
 			if(ret == 'y'){						//really exit
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(ERR_SEND);
+				if(ret < 0) error_handler(ERR_SEND, 0);
 				goon = 0;
 				continue;
 			}
@@ -254,7 +254,11 @@ void gameloop(int gamesocket){
 			if(ret == 'y'){					//really restart
 				c_player.instructions |= RESTART;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-				if(ret < 0) error_handler(ERR_SEND);
+				if(ret < 0){
+					error_handler(ERR_SEND, 0);
+					goon = 0;
+					continue;
+				}
 				gameloop(gamesocket);
 				return;
 			}
@@ -262,19 +266,23 @@ void gameloop(int gamesocket){
 
 	//TRANSMIT TCP PACKAGE
 		ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-		if(ret < 0) error_handler(-7);
+		if(ret < 0){
+			error_handler(ERR_SEND, 0);
+			goon = 0;
+			continue;
+		}
 
 	//clientside <- end
 	}
   // GAME ENDS HERE --------------------------------------------------
 
   beep();
-	free(client_data_exchange_container);
+	if(client_data_exchange_container != NULL) free(client_data_exchange_container);
   endwin();
 
 	// Disconnect from serverterminal
 	ret = close(gamesocket);
-	if(ret < 0) error_handler(-29);
+	if(ret < 0) error_handler(ERR_CLOSING_SOCKET_FAILED, EXIT);
 
 	return;
 }
@@ -378,7 +386,7 @@ void spectate(int socket, char playername[]){
   // GAME STARTS HERE ------------------------------------------------
   client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
   init_graphix();
-  print_scorescr(playername, c_player.score, c_player.life, 0);		// TODO: change from 0 to number of spectators!
+  print_scorescr(playername, c_player.score, c_player.life);
   usleep(DELAY);
 
 	//request first packet
@@ -387,30 +395,31 @@ void spectate(int socket, char playername[]){
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
 	while(goon) {
-	  //clientside -> start
+
 		ch = wgetch(fieldscr);
 
-		if(ch == 'q'){						//quit game
+		//quit game?
+		if(ch == 'q'){
 			ret = disp_infoscr(ch);
 			if(ret == 'y'){
 			 	tmp_byte = ENDOFCON;
 				send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
 				goon = 0;
 				continue;
-			}/*else {
-
-			}		//TODO!! RESTORE SCREEN DUMP!! */
+			}
 		}
 
 		//GET TCP PACKAGE
 		msgSize = recv(socket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		//acknowloedge that we are ready to receive!
 		tmp_byte = ACK;
-		send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
+		ret = send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
 
-		if(msgSize <= 0){
+		if(msgSize <= 0 || ret <= 0){
 			if(errno != EWOULDBLOCK){
-				error_handler(-8);
+				error_handler(ERR_CONNECTION_LOST, 0);
+				goon = 0;
+				continue;
 			}else{
 				usleep(500000);
 				continue;
@@ -420,9 +429,8 @@ void spectate(int socket, char playername[]){
 		//Look if player is game over
 		if(((Player*)client_data_exchange_container)->life == 0){
 				c_player.instructions |= QUIT;
-				close(socket);
-				endwin();
-				exit(EXIT_SUCCESS);
+				goon = 0;
+				continue;
 		}
 
 		//DECODE TRANSMITTED PACKAGE
@@ -440,14 +448,14 @@ void spectate(int socket, char playername[]){
 		draw_player(&c_player, ' ');
 		draw_obj(c_obj, ' ');
 		draw_shot(c_shots, ' ');
-		print_scorescr(playername, c_player.score, c_player.life, 0);
+		print_scorescr(playername, c_player.score, c_player.life);
 		usleep(DELAY);
 	}
 																																			//never reached!! delete?
   beep();
-  free(client_data_exchange_container);
+  if(client_data_exchange_container != NULL) free(client_data_exchange_container);
 	ret = close(socket);
-	if(ret < 0) error_handler(-29);
+	if(ret < 0) error_handler(ERR_CLOSING_SOCKET_FAILED, EXIT);
   endwin();
 
 	return;

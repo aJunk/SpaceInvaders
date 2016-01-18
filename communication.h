@@ -65,7 +65,11 @@
 #define INFO 1
 #define ERROR -1
 
+#define EXIT 1
+
 //ERRORS sockets 1-10; connection 11-20; server 21-30; client 31-40
+#define ERR_INVALID_ARGUMENT -5
+
 #define ERR_CREATE_SOCKET -1
 #define ERR_BIND -2
 #define ERR_LISTENER -3
@@ -81,6 +85,8 @@
 #define ERR_C_ARG -31
 #define ERR_INVALID_PORT -32
 #define ERR_PLAYERNAME -33
+#define ERR_CLOSING_SOCKET_FAILED -29
+#define ERR_CONNECTION_LOST -8
 
 //size of data exchange containers (needs to be known at pre-compilation-time)
 #define SET_SIZE_OF_DATA_EXCHANGE_CONTAINER sizeof(Object) * MX * MY + sizeof(Player) + sizeof(uint16_t) * MX * MY + sizeof(uint16_t) * 3
@@ -126,6 +132,6 @@ typedef struct{
 
 //global functions
 void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
-void error_handler(int error_no);					//prints an error message according to value of error_no, exits with EXIT_ERROR
+void error_handler(int error_no, int mode);					//prints an error message according to value of error_no, exits with EXIT_ERROR
 
 #endif
