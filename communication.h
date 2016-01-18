@@ -138,7 +138,7 @@ typedef struct{
   uint8_t active;
 }Shot;
 
-//global functions
+//for encoding and decoding packages
 void handle_package(uint8_t *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
 
 #endif
