@@ -1,5 +1,5 @@
 /**************************************************************************
- * SPACEINVADERS GAME - client (header)
+ * SPACEINVADERS GAME - server (header)
  * Headerfile for a TCP/IP based Spaceinvaders game for Linux and MacOS.
  * Provides several prototypes of functions for the server.
  *
