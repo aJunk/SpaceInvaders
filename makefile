@@ -8,10 +8,7 @@ STATICLIBFILENAME=libs
 DYNLIBFILENAME=
 LINE=\n-----------------------------------------------\n
 
-all: clean havedirs game server
-#	gcc -c *.c -I./include $(CFLAGS) $(INCLUDEFLAGES)
-#	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
-	make client
+all: clean havedirs server client
 
 clean:
 	rm -rf *o $(PNAME) $(PNAME).*
@@ -19,23 +16,6 @@ clean:
 havedirs:
 	@test -d $(H_FILE_DIR) || (mkdir $(H_FILE_DIR);echo "Yay, I proudly present to you, your first .h in your library! I put it in $(H_FILE_DIR) for you!\n")
 	@test -d $(STATICLIBTARGETDIR) || (mkdir $(STATICLIBTARGETDIR);echo "Yay, I proudly present to you, your first product in your library! I put it in $(STATICLIBTARGETDIR) for you!\n")
-
-static: clean havedirs
-	gcc -c $(STATICLIBFILENAME).c -I$(H_FILE_DIR) -m32
-	ar rcs $(STATICLIBFILENAME).a $(STATICLIBFILENAME).o
-	-rm $(LIBTARGETDIR)/$(STATICLIBFILENAME).a
-	mv $(STATICLIBFILENAME).a $(LIBTARGETDIR)
-	cp $(STATICLIBFILENAME).h $(H_FILE_DIR)/$(STATICLIBFILENAME).h
-
-dynamic: clean havedirs
-	gcc -v -dynamiclib -current_version 1.0  -o $(DYNLIBFILENAME).dylib -I../misc ../misc/*.a
-	file $(DYNLIBFILENAME).dylib
-	otool -L $(DYNLIBFILENAME).dylib
-	-rm $(LIBTARGETDIR)/$(DYNLIBFILENAME).dylib
-	mv $(DYNLIBFILENAME).dylib $(LIBTARGETDIR)
-	cp $(DYNLIBFILENAME).h $(H_FILE_DIR)/$(DYNLIBFILENAME).h
-
-all: server client audio
 
 run: all
 	clear
@@ -62,10 +42,6 @@ client: clean
 
 client_withsound: clean
 	 gcc client.c  graphX.c communication.c -o client -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses -DSOUND
-
-
-testrand: clean
-	gcc testrand.c -o test -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter -lncurses
 
 audio:
 	gcc audiodaemon.c -o adeamon -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES)
