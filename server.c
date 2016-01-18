@@ -74,7 +74,7 @@ int main(int argc, char **argv){
 	// Check arguments
 	if(argc > 2){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
-		else error_handler(ERR_S_ARG, EXIT,EXIT);
+		else error_handler(ERR_S_ARG,EXIT);
 	}
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(ERR_INVALID_PORT, EXIT);
 
@@ -205,25 +205,39 @@ void gameloop(int socket[], char playername[]){
 	int spectator[MAXSPECT]={0};
 	int numspect = 0;
 	pid_t pid = getpid();
+	uint8_t goon = 1;
+	uint8_t noerror = 1;
+
+	srand((unsigned) time(&t));
+	server_data_exchange_container = NULL;
+	server_res_buf = 0;
+	dir = 'r';
+
+
 
 	print_server_msg(pid, SUCCESS, "Gameloop entered. Playername:", 0, playername);
 
 	//waiting for client to connect!
 	if(!recursive){
 		client = accept(socket[0], (struct sockaddr *) NULL, NULL);
+		if(client <= 0){
+			print_server_msg(pid, ERROR, "No client appeared", 0, "");
+			exit(EXIT_ERROR);
+		}
+
 		//final handshake
 		uint16_t tmp_int = 22;
 		ret = send(client, &tmp_int, sizeof(uint16_t), 0);
+		if(ret <= 0){
+			close(client);
+			print_server_msg(pid, ERROR, "Failed to complete handshake", 0, "");
+			exit(EXIT_ERROR);
+		}
 		print_server_msg(pid, SUCCESS, "Client connected, handshake sent", 0, "");
 	}
-	if(client < 0) error_handler(ERR_CONNECT,EXIT);
+
 	recursive = 0;
 
-  //SERVERSIDE INIT
-	srand((unsigned) time(&t));
-	server_data_exchange_container = NULL;
-	server_res_buf = 0;
-	dir = 'r';
 
 	s_player.pos[0] = MX/2;
 	s_player.pos[1] = MY-2;
@@ -249,24 +263,24 @@ void gameloop(int socket[], char playername[]){
 	}
 
 	//add attributes
-	server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+	if(server_data_exchange_container == NULL) server_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 
 	//create some objects in lines
 	place_object(3, appearChance);
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
-	while(1) {
+	while(goon) {
 		time(&currentTime);
 
 		//encode TCP package
 		handle_package(server_data_exchange_container, &s_player, s_obj, s_shots, ASSEMBLE);
 
 		//transmit TCP package
-    //TODO: Calculate size of container to send!!!!!!
 		ret = send(client, server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
 		if(ret <= 0){
-			free(server_data_exchange_container);
-			error_handler(ERR_SEND,EXIT);
+			print_server_msg(pid, ERROR, "Transmission failed", 0, "");
+			goon = 0;
+			continue;
 		}
 
 		//HANDLE SPECTATORS
@@ -293,7 +307,6 @@ void gameloop(int socket[], char playername[]){
 						ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}else{
 						//NOTHING TO DO HERE
-						//ret = send(spectator[i], server_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, MSG_DONTWAIT);
 					}
 			}
 		}
@@ -301,19 +314,23 @@ void gameloop(int socket[], char playername[]){
 		//get TCP package
 		msgSize = recv(client, &(s_player.instructions), sizeof(s_player.instructions), 0);
 		if(msgSize <= 0){
-			free(server_data_exchange_container);
-			error_handler(ERR_RECV,EXIT);
+			print_server_msg(pid, ERROR, "Receiving data from player failed", 0, "");
+			goon = 0;
+			noerror = 0;
+			continue;
 		}
 
 		//check for quit, restart
-		if(s_player.instructions & QUIT) break;
-		else if(s_player.instructions & RESTART){
-			free(server_data_exchange_container);
+		if(s_player.instructions & QUIT){
+			goon = 0;
+			continue;
+		}else if(s_player.instructions & RESTART){
 			endwin();
 			print_server_msg(pid, INFO, "Game restarted", 0, "");
 			recursive = 1;
 			gameloop(socket,playername);
-			return;
+			goon = 0;
+			continue;
 		}
 
 		//initiate shot & update player
@@ -342,14 +359,14 @@ void gameloop(int socket[], char playername[]){
 
 		loopCount++;
 	}
+
 	beep();
 	free(server_data_exchange_container);
 	endwin();
-	print_server_msg(pid, SUCCESS, "Game quit, ended normally. Score/name:", s_player.score, playername);
+	if(noerror)print_server_msg(pid, SUCCESS, "Game quit, ended normally. Score/name:", s_player.score, playername);
 	close(client);
 	for(int i = 0; i < MAXSPECT; i++){
 		if(spectator[i] > 0){
-
 			close(spectator[i]);
 		}
 	}
