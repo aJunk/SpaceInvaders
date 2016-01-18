@@ -87,6 +87,14 @@ int main(int argc, char **argv) {
 	if(gamesocket < 0) error_handler(ERR_CONNECT, EXIT);
 
 	init_graphix();
+	wrefresh(fieldscr);
+
+	char greeting[30] = "...connecting to server!";
+	char info[30] = "please wait (may be busy)";
+	mvwprintw(scorescr, 1, MX/2 - strlen(greeting)/2, greeting);
+	mvwprintw(statscr, 0, MX/2 - strlen(info)/2, info);
+	wrefresh(scorescr);
+	wrefresh(statscr);
 
 	msgSize = recv(gamesocket, &tmp_game_mem, sizeof(Game) * MAXGAMES, 0);
 	if(msgSize <= 0){
@@ -102,14 +110,15 @@ int main(int argc, char **argv) {
 	}
 	wrefresh(fieldscr);
 
-	const char greeting[] = "WELCOME TO THE ARENA!";
-	const char info[] = "enter number, \"n\" for new";
+
+	strcpy(greeting,"  WELCOME TO THE ARENA!  ");
+	strcpy(info,"enter number, \"n\" for new");
 	mvwprintw(scorescr, 1, MX/2 - strlen(greeting)/2, greeting);
 	mvwprintw(statscr, 0, MX/2 - strlen(info)/2, info);
 	wrefresh(scorescr);
 	wrefresh(statscr);
 
-	//printstuff
+	//print stuff
 	timeout(1);
 	do{
 		ch = wgetch(fieldscr);
@@ -468,7 +477,7 @@ void spectate(int socket, char playername[]){
 		print_scorescr(playername, c_player.score, c_player.life);
 		usleep(DELAY);
 	}
-																																			//never reached!! delete?
+
   beep();
   if(client_data_exchange_container != NULL) free(client_data_exchange_container);
 	ret = close(socket);
