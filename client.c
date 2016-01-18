@@ -304,7 +304,7 @@ void gameloop(int gamesocket){
 
   beep();
 	if(client_data_exchange_container != NULL){
-		free(client_data_exchange_container)
+		free(client_data_exchange_container);
 		client_data_exchange_container=NULL;
 	}
   endwin();
