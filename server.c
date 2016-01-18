@@ -206,7 +206,7 @@ void gameloop(int socket[], char playername[]){
 	int appearChance = 20;				//chance that an object appears at a position
 	static uint8_t recursive = 0;		//check if game is restarted
 	static int client = -1;
-	int numspect = 0;
+	static int numspect = 0;
 	pid_t pid = getpid();
 	uint8_t goon = 1;
 	uint8_t noerror = 1;
