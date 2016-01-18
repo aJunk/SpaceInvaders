@@ -2,9 +2,7 @@
 #define _POSIX_C_SOURCE 199309L
 #endif
 
-#ifdef __APPLE__
 #define _BSD_SOURCE
-#endif
 
 #include <unistd.h>
 
