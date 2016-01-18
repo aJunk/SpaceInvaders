@@ -1,3 +1,11 @@
+/**************************************************************************
+ * SPACEINVADORS GAME - graphX-libary
+ * Libary for a TCP/IP based Spaceinvadors game for Linux and MacOS.
+ * Provides serveral grafics functions.
+ *
+ * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
+ * UAS Technikum Wien, BMR14
+ */
 #include "graphX.h"
 #include <ncurses.h>
 #include <sys/types.h>

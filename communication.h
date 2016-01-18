@@ -1,3 +1,11 @@
+/**************************************************************************
+ * SPACEINVADORS GAME - communication-headerfile
+ * Headerfile for a TCP/IP based Spaceinvadors game for Linux and MacOS.
+ * various defines, struct typedefs and declaration of global functions
+ *
+ * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
+ * UAS Technikum Wien, BMR14
+ */
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdint.h>

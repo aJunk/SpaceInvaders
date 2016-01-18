@@ -1,4 +1,11 @@
-
+/**************************************************************************
+ * SPACEINVADORS GAME - CLIENT
+ * Clientprogram for a TCP/IP based Spaceinvadors game for Linux and MacOS.
+ * User can eigther start a new game or become a spectator of an ongoing game.
+ *
+ * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
+ * UAS Technikum Wien, BMR14
+ */
 #ifdef __linux__
 #define _POSIX_C_SOURCE 199309L
 #endif
@@ -6,7 +13,6 @@
 #define _BSD_SOURCE
 
 #include <unistd.h>
-
 #include <errno.h>
 #include <ncurses.h>
 #include <stdlib.h>
@@ -38,10 +44,10 @@ int sound_queue;
 int connect2server(char ip[16], int port);			//creates a socket and connects to server with given ip and port; return socket-fd
 void init_shot(Player *_player, int input);
 void move_player(Player *_player, int input);
-void gameloop(int gamesocket);						//loop where game is executed, send/recv to player takes place
-void spectate(int socket, char playername[]);
+void gameloop(int gamesocket);			//loop where game is executed, send/recv to player takes place
+void spectate(int socket, char playername[]);		//loop for spectators, where data is recived and displayed
 
-void sig_handler(){									//if a user/system interrupts
+void sig_handler(){	  //if a user/system interrupts
 	endwin();
 	printf("*** Client ended due to interrupt ***\n");		//printf may be interrupted but better than don't handling case
 	exit(EXIT_SUCCESS);
@@ -78,11 +84,15 @@ int main(int argc, char **argv) {
 
 	//Connect
 	gamesocket = connect2server(ip, port);
-	if(gamesocket < 0) error_handler(gamesocket, EXIT);
+	if(gamesocket < 0) error_handler(ERR_CONNECT, EXIT);
 
 	init_graphix();
 
 	msgSize = recv(gamesocket, &tmp_game_mem, sizeof(Game) * MAXGAMES, 0);
+	if(msgSize <= 0){
+		close (gamesocket);
+		error_handler(ERR_RECV, EXIT);
+	}
 	for(int i=0; i<MAXGAMES; i++){
 		if(tmp_game_mem[i].pid != 0){
 			mvwprintw(fieldscr, 2 + i, 1, "%d : \"%s\"\n", i, tmp_game_mem[i].name);
@@ -109,9 +119,9 @@ int main(int argc, char **argv) {
 		role = ACTIVE_PLAYER;
 		if(strlen(playername)==0) strcpy(playername,"ANON");
 	}else{ //SPECTATOR
-		role = SPECTATOR;																							//??
-		//set choosen port																										// really necessary?
-		port=tmp_game_mem[ch - 48].port;																								//game hardcoded!!
+		role = SPECTATOR;
+		//set choosen port
+		port=tmp_game_mem[ch - 48].port;
 		strcpy(playername,""); //send empty playername
 	}
 	endwin();
@@ -126,6 +136,10 @@ int main(int argc, char **argv) {
 		case ACTIVE_PLAYER:
 			//recive new gameport
 			msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
+			if(msgSize <= 0){
+				close (gamesocket);
+				error_handler(ERR_RECV, EXIT);
+			}
 			//printf("got Port: %d\n", buf);
 			close(gamesocket);
 
@@ -136,6 +150,10 @@ int main(int argc, char **argv) {
 			//final handshake
 			buf = 0;
 			msgSize = recv(gamesocket, &buf , sizeof(uint16_t), 0);
+			if(msgSize <= 0){
+				close (gamesocket);
+				error_handler(ERR_RECV, EXIT);
+			}
 			//printf("got: %d\n", buf);
 			//enter gameloop
 			gameloop(gamesocket);
@@ -144,7 +162,7 @@ int main(int argc, char **argv) {
 			close(gamesocket);
 			//conect to game as spectator
 			gamesocket = connect2server(ip, port);
-			if(gamesocket < 0) error_handler(gamesocket, EXIT);
+			if(gamesocket < 0) error_handler(ERR_CONNECT, EXIT);
 
 			spectate(gamesocket, tmp_game_mem[ch - 48].name);
 			break;
@@ -174,7 +192,6 @@ void gameloop(int gamesocket){
 
 		//GET TCP PACKAGE
 		msgSize = recv(gamesocket, client_data_exchange_container, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER, 0);
-
 		if(msgSize <= 0){
 			if(errno != EWOULDBLOCK)error_handler(ERR_RECV, 0);
 			goon = 0;

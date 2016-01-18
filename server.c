@@ -1,7 +1,10 @@
-/*
+/**************************************************************************
  * SPACEINVADORS GAME - SERVER
- * Serverprogram for a TCP/IP based Spaceinvadors game for Linux and MacOS
+ * Serverprogram for a TCP/IP based Spaceinvadors game for Linux and MacOS.
+ * Allows up to 5 parallel games and aditional 5 spectators per game.
+ *
  * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
+ * UAS Technikum Wien, BMR14
  */
 
 #ifdef __linux__
@@ -213,8 +216,6 @@ void gameloop(int socket[], char playername[]){
 	server_res_buf = 0;
 	dir = 'r';
 
-
-
 	print_server_msg(pid, SUCCESS, "Gameloop entered. Playername:", 0, playername);
 
 	//waiting for client to connect!
@@ -237,7 +238,6 @@ void gameloop(int socket[], char playername[]){
 	}
 
 	recursive = 0;
-
 
 	s_player.pos[0] = MX/2;
 	s_player.pos[1] = MY-2;
@@ -344,14 +344,20 @@ void gameloop(int socket[], char playername[]){
 		//move objects
 		if(loopCount == appearTime){
 			ret = move_object(1);
-			if(ret == 1) s_player.life--;			//set player-lifes to 0 to let player know game over
+			if(ret == -1) s_player.life--;			//decrement player-lifes
+			else if(ret == 1){
+				appearTime = (int)((double)appearTime * 0.9);
+				if (appearTime < 1) appearTime = 1;
+				//create some objects in lines
+				place_object(3, appearChance);
+			}
 			loopCount = 0;
 		}
 
 		//make falling objects faster than sideways moving ones!
 		if(loopCount%(appearTime/8) == (appearTime/8)-1){
 			ret = move_object(2);
-			if(ret == 1) s_player.life--;
+			if(ret == -1) s_player.life--;
 		}
 
 		//display in server log when player game over
@@ -361,7 +367,7 @@ void gameloop(int socket[], char playername[]){
 	}
 
 	beep();
-	free(server_data_exchange_container);
+	if(server_data_exchange_container != NULL) free(server_data_exchange_container);
 	endwin();
 	if(noerror)print_server_msg(pid, SUCCESS, "Game quit, ended normally. Score/name:", s_player.score, playername);
 	close(client);
@@ -465,7 +471,7 @@ int move_object(uint8_t type){
 	int yOffset = 0;
 	int xOffset = 0;
 	int appearChance = 20;
-	int gameover = 0;
+	int state = 1; //-1 = gameover; 0 = continue game; 1 = no enemys left
 	int max_y = 0;
 
 	if(type == 1){
@@ -476,6 +482,7 @@ int move_object(uint8_t type){
 		//check if y-move is necessary
 		for(int i = 0; i < (MX*MY); i++){
 			if(s_obj[i].type == 1 && s_obj[i].life > 0){		//check if it is a wandering object still alive
+				state = 0;
 				if((dir == 'r' && s_obj[i].pos[0]+1 >= MX) || (dir == 'l' && s_obj[i].pos[0] <= 0)){		//if wandering right/left would hit wall
 					yOffset = 1;
 					xOffset = 0;  //no x-move when y-move
@@ -491,7 +498,7 @@ int move_object(uint8_t type){
 				s_obj[i].pos[1] = s_obj[i].pos[1] + yOffset;
 				s_obj[i].status = UPDATED;
 				if(s_obj[i].pos[1] > MY - HEIGHT_OF_PLAYER_SPACE - 2){		//check if a y-move would hit lower border
-					gameover = 1;
+					state = -1;
 					break;
 				}
 				if(s_obj[i].pos[1] > max_y) max_y = s_obj[i].pos[1];		//get maximum y-position of objects
@@ -532,7 +539,7 @@ int move_object(uint8_t type){
 			if(s_obj[i].type == 2 && s_obj[i].life > 0){		//check if it is a falling object and still alive
 				if(test_for_collision(s_obj[i].pos, s_player.pos, 0, 1)){
 					s_obj[i].life = 0;
-					gameover = 1;
+					state = -1;
 				}
 				else if(s_obj[i].pos[1] < (MY - 1) ){			//object isn't on bottom position yet
 					s_obj[i].pos[1]++;
@@ -544,7 +551,7 @@ int move_object(uint8_t type){
 			}
 		}
 	}
-	return gameover;
+	return state;
 }
 
 void place_object(int lines, int appearChance){
