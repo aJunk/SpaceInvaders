@@ -8,7 +8,7 @@ STATICLIBFILENAME=libs
 DYNLIBFILENAME=
 LINE=\n-----------------------------------------------\n
 
-all: clean havedirs server client
+all: clean server client
 
 clean:
 	rm -rf *o $(PNAME) $(PNAME).*

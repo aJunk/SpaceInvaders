@@ -1,9 +1,9 @@
- ____            _      _    _   _                    _              _ _                       
-|  _ \ _ __ ___ (_) ___| | _| |_| |__   ___  ___  ___| |__  _ __ ___(_) |__  _   _ _ __   __ _ 
+ ____            _      _    _   _                    _              _ _
+|  _ \ _ __ ___ (_) ___| | _| |_| |__   ___  ___  ___| |__  _ __ ___(_) |__  _   _ _ __   __ _
 | |_) | '__/ _ \| |/ _ \ |/ / __| '_ \ / _ \/ __|/ __| '_ \| '__/ _ \ | '_ \| | | | '_ \ / _` |
 |  __/| | | (_) | |  __/   <| |_| |_) |  __/\__ \ (__| | | | | |  __/ | |_) | |_| | | | | (_| |
 |_|   |_|  \___// |\___|_|\_\\__|_.__/ \___||___/\___|_| |_|_|  \___|_|_.__/ \__,_|_| |_|\__, |
-              |__/                                                                       |___/ 
+              |__/                                                                       |___/
 
 Das Spiel „Space Invaders“ soll mit Hilfe von TCP/IP-Sockets implementiert werden.
 Die Spiel-Steuerung übernimmt ein Server-Prozess, der auf einem TCP-Port auf neue Spieler wartet.
@@ -19,32 +19,35 @@ Dann erfolgt eine Bewegung nach unten und die Gegner bewegen sich in die entgege
 wieder bis der andere Rand berührt wird, usw.
 Am oberen Rand wird der eigene Name, der Score (Punkte sammeln durch Abschießen von Gegnern)
 und die Anzahl der Leben angezeigt.
-			 
+
 Optional:
  + Gegner schießen zu zufälligen Zeiten gezielt auf den Spieler
  + Farbige Gegner, Schüsse, etc.
- _  __                     _ _ _                             
-| |/ /___  _ __ ___  _ __ (_) (_) ___ _ __ _   _ _ __   __ _ 
+ + Spiel wird mit der Zeit schwerer
+ _  __                     _ _ _
+| |/ /___  _ __ ___  _ __ (_) (_) ___ _ __ _   _ _ __   __ _
 | ' // _ \| '_ ` _ \| '_ \| | | |/ _ \ '__| | | | '_ \ / _` |
 | . \ (_) | | | | | | |_) | | | |  __/ |  | |_| | | | | (_| |
 |_|\_\___/|_| |_| |_| .__/|_|_|_|\___|_|   \__,_|_| |_|\__, |
-                    |_|                                |___/ 
+                    |_|                                |___/
 
 Mithilfe des makefiles:
-	make client
+  make all
+    oder:
+  make client
 	make server
 oder händisch kompilieren:
 	gcc graphX.c client.c s_c_func.c -o client -std=c99 -Wall -pedantic -lncurses -DNOSOUND
 	gcc graphX.c server.c s_c_func.c -o server -std=c99 -Wall -pedantic -lncurses
-    _              __ _   _ _                            
-   / \  _   _ ___ / _(_) (_) |__  _ __ _   _ _ __   __ _ 
+    _              __ _   _ _
+   / \  _   _ ___ / _(_) (_) |__  _ __ _   _ _ __   __ _
   / _ \| | | / __| |_| | | | '_ \| '__| | | | '_ \ / _` |
  / ___ \ |_| \__ \  _| |_| | | | | |  | |_| | | | | (_| |
 /_/   \_\__,_|___/_|  \__,_|_| |_|_|   \__,_|_| |_|\__, |
-                                                   |___/ 									
+                                                   |___/
 	server [-p <port>]
 	client [-i <server ip>] [-p <server port>] [-n <player name>]
-	
+
 Der Parameter für die -p Option gibt den TCP Port des Sockets an, über den kommuniziert werden soll.
 Der Server soll auf allen möglichen Schnittstellen/IPs lauschen. Beim Client soll zusätzlich mittels -i
 Parameter die IP-Adresse des Servers angeben werden können. Sollte dies fehlen, wird 127.0.0.1 verwendet.
