@@ -303,7 +303,10 @@ void gameloop(int gamesocket){
   // GAME ENDS HERE --------------------------------------------------
 
   beep();
-	if(client_data_exchange_container != NULL) free(client_data_exchange_container);
+	if(client_data_exchange_container != NULL){
+		free(client_data_exchange_container)
+		client_data_exchange_container=NULL;
+	}
   endwin();
 
 	// Disconnect from serverterminal
@@ -479,7 +482,10 @@ void spectate(int socket, char playername[]){
 	}
 
   beep();
-  if(client_data_exchange_container != NULL) free(client_data_exchange_container);
+  if(client_data_exchange_container != NULL){
+		free(client_data_exchange_container);
+		client_data_exchange_container=NULL;
+	}
 	ret = close(socket);
 	if(ret < 0) error_handler(ERR_CLOSING_SOCKET_FAILED, EXIT);
   endwin();
