@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	timeout(1);
 	do{
 		ch = wgetch(fieldscr);
-	}while(ch != 'n' && ((ch - 48) > MAXGAMES || (ch - 48) < 0));
+	}while(ch != 'n' && ((ch - 48) > (MAXGAMES-1) || (ch - 48) < 0));
 
 	if(ch == 'n'){
 		role = ACTIVE_PLAYER;
@@ -149,7 +149,6 @@ int main(int argc, char **argv) {
 				close (gamesocket);
 				error_handler(ERR_RECV, EXIT);
 			}
-			//printf("got Port: %d\n", buf);
 			close(gamesocket);
 
 			//Connect
@@ -163,7 +162,6 @@ int main(int argc, char **argv) {
 				close (gamesocket);
 				error_handler(ERR_RECV, EXIT);
 			}
-			//printf("got: %d\n", buf);
 			//enter gameloop
 			gameloop(gamesocket);
 			break;
@@ -193,7 +191,7 @@ void gameloop(int gamesocket){
 	  //memset(client_data_exchange_container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
 	  init_graphix();
 	  print_scorescr(playername, c_player.score, c_player.life);
-	  print_statscr();
+	  print_statscr('p');
 	  usleep(DELAY);
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
@@ -430,7 +428,10 @@ void spectate(int socket, char playername[]){
   // GAME STARTS HERE ------------------------------------------------
   client_data_exchange_container = malloc(SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
   init_graphix();
+
+
   print_scorescr(playername, c_player.score, c_player.life);
+  print_statscr('s');
   usleep(DELAY);
 
 	//request first packet
