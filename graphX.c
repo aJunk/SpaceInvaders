@@ -104,7 +104,6 @@ void init_graphix(){
 }
 
 void print_scorescr(char playername[PLAYER_NAME_LEN + 1], int16_t score, int16_t life, int spectators){
-	/*number of spectators not implemented yet */
 	mvwprintw(scorescr, 1, 1, "%10s %-5d Lifes: %-2d", playername, score, life);
 	wrefresh(scorescr);
 }
