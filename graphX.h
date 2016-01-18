@@ -1,5 +1,4 @@
 #include "communication.h"
-#include <sys/types.h>
 #include <ncurses.h>
 
 #ifndef GRAPHX_H_INCLUDED

@@ -1,5 +1,11 @@
+#ifdef __linux__
 #define _POSIX_C_SOURCE 199309L
+#endif
+
+#ifdef __APPLE__
 #define _BSD_SOURCE
+#endif
+
 #include <unistd.h>
 
 #include <ncurses.h>
@@ -63,7 +69,7 @@ int main(int argc, char **argv){
 	sigemptyset(&sig.sa_mask);
 	sigaction(SIGINT, &sig, NULL);
 	sigaction(SIGPIPE, &sig, NULL);
-  
+
 	// Check arguments
 	if(argc > 2){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
@@ -535,7 +541,7 @@ int launch_gameserver(int port){
 	address.sin_addr.s_addr = INADDR_ANY; 							//Receive packets from any address
 	if(port != NEXT_AVAILABLE) address.sin_port = htons(port);		//if a port is given to function it is set
 	else address.sin_port = 0;										//get next free port from system
-	
+
 	// Create Socket		Address family: AF_INET: IPv4; Socket type: SOCK_STREAM: Stream; Protocol: 0: Standard to socket type
 	gamesocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (gamesocket < 0) return ERR_CREATE_SOCKET;
