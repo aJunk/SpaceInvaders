@@ -1,3 +1,11 @@
+/**************************************************************************
+ * SPACEINVADERS GAME - client (header)
+ * Headerfile for a TCP/IP based Spaceinvaders game for Linux and MacOS.
+ * Provides several prototypes of functions for the client.
+ *
+ * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
+ * UAS Technikum Wien, BMR3_2014
+ */
 #ifndef CLIENT_H_INCLUDED
 #define CLIENT_H_INCLUDED
 
