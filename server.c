@@ -80,22 +80,34 @@ int main(int argc, char **argv){
 
 	// Launch gameserver
 	gamesocket = launch_gameserver(port);
-	if(gamesocket < 0) error_handler(gamesocket,EXIT);
+	if(gamesocket < 0) error_handler(ERR_CREATE_SOCKET,EXIT);
 	print_server_msg(0, SUCCESS, "Gameserver launched. Port: ", port, "");
 
 	// Get connections
 	while(1){
 		new_client = accept(gamesocket, (struct sockaddr *) NULL, NULL);
 
-		if(new_client < 0) print_server_msg(0, ERROR, "Accept failed", 0, "");
+		if(new_client < 0){
+			print_server_msg(0, ERROR, "Accept failed", 0, "");
+			continue;
+		}
 		else print_server_msg(0, SUCCESS, "Client connected", 0, "");
 
 		numgames = check_alive(game_mem);
 		ret = send(new_client, &game_mem, sizeof(Game) * MAXGAMES, 0);
+		if(ret <= 0){
+			close(new_client);
+			print_server_msg(0, ERROR, "Initial transission failed", 0, "");
+			continue;
+		}
 
 		//get playername from client
 		msgSize = recv(new_client, playername, PLAYER_NAME_LEN + 1, 0);
-		if(msgSize <= 0) print_server_msg(0, ERROR, "Receiving playername failed", 0, "");
+		if(msgSize <= 0){
+			 close(new_client);
+			 print_server_msg(0, ERROR, "Receiving playername failed", 0, "");
+			 continue;
+		 }
 
 
 		if(strlen(playername) != 0){ //player wants to start a new game
@@ -103,23 +115,43 @@ int main(int argc, char **argv){
 
 			//check if maximal number of games is already reached
 			numgames = check_alive(game_mem);
-			if(numgames >= MAXGAMES) print_server_msg(0, ERROR, "Receiving playername failed", 0, "");
+			if(numgames >= MAXGAMES){
+				close(new_client);
+				print_server_msg(0, ERROR, "Rejected player - all slots in use", 0, "");
+				continue;
+			}
+
 
 			//creating new gamesocket bound to any available port
 			new_socket[0] = launch_gameserver(NEXT_AVAILABLE);
-			if(new_socket[0] < 0) print_server_msg(0, ERROR, "Launching gameserver failed. Returned: ", new_socket[0], "");
+			if(new_socket[0] < 0){
+				print_server_msg(0, ERROR, "Launching gameserver failed. Returned: ", new_socket[0], "");
+				close(new_client);
+				continue;
+			}
 
 			//creating new spectatorsocket bound to any available port
 			new_socket[1] = launch_gameserver(NEXT_AVAILABLE);
-			if(new_socket[1] < 0) print_server_msg(0, ERROR, "Creating spectatorsocket failed. Returned: ", new_socket[1], "");
+			if(new_socket[1] < 0) {
+				print_server_msg(0, ERROR, "Creating spectatorsocket failed. Returned: ", new_socket[1], "");
+				close(new_client);
+				close (new_socket[0]);
+				continue;
+			}
 
 			//cahange spectatorsocket to nonblocking mode
 			ret = fcntl(new_socket[1], F_SETFL, fcntl(new_socket[1], F_GETFL, 0) | O_NONBLOCK);
-			if (ret == -1) perror("calling fcntl");																																	//TODO: Errorhandler
-
+			if (ret == -1){
+				print_server_msg(0, ERROR, "Creating spectatorsocket failed. ", 0, "");
+				close(new_client);
+				close (new_socket[0]);
+				close (new_socket[1]);
+				continue;
+			}
 			//looking up the port the gamesocket was bound to and sending it to the client.
 			uint16_t tmp_port = which_port(new_socket[0]);
 			ret = send(new_client, &tmp_port, sizeof(uint16_t), 0);
+			if(ret <= 0) print_server_msg(0, ERROR, "Communicating port to client failed ", 0, "");
 
 			//closing the connection (socket still open)
 			close(new_client);
@@ -132,7 +164,6 @@ int main(int argc, char **argv){
 
 			// Create child process
 			cpid = fork();
-			if(cpid < 0) print_server_msg(0, ERROR, "Forking failed", 0, "");
 
 			if (cpid == 0){
 				close(gamesocket);
@@ -140,13 +171,18 @@ int main(int argc, char **argv){
 				print_server_msg(pid, INFO, "Temp socket disconnected", 0, "");
 				gameloop(new_socket,playername);
 			}
-			else{
+			else if(cpid > 0){
 				//go to next empty place
 				for(i=0; (i<MAXGAMES) && (game_mem[i].pid!=0); i++);
 
 				strcpy(game_mem[i].name,playername);
 				game_mem[i].pid = cpid;
 				game_mem[i].port = tmp_port;
+				close(new_socket[0]);
+				close(new_socket[1]);
+			}
+			else {
+				print_server_msg(0, ERROR, "Forking failed", 0, "");
 				close(new_socket[0]);
 				close(new_socket[1]);
 			}
@@ -314,7 +350,7 @@ void gameloop(int socket[], char playername[]){
 	close(client);
 	for(int i = 0; i < MAXSPECT; i++){
 		if(spectator[i] > 0){
-			
+
 			close(spectator[i]);
 		}
 	}
