@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include "communication.h"
 #include "graphX.h"
+#include "client.h"
 
 //client-variables
 Player c_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
@@ -39,19 +40,6 @@ char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 char playername[PLAYER_NAME_LEN + 1] = "";
 int sound_queue;
-
-//clientside functions
-int connect2server(char ip[16], int port);			//creates a socket and connects to server with given ip and port; return socket-fd
-void init_shot(Player *_player, int input);
-void move_player(Player *_player, int input);
-void gameloop(int gamesocket);			//loop where game is executed, send/recv to player takes place
-void spectate(int socket, char playername[]);		//loop for spectators, where data is recived and displayed
-
-void sig_handler(){	  //if a user/system interrupts
-	endwin();
-	printf("*** Client ended due to interrupt ***\n");		//printf may be interrupted but better than don't handling case
-	exit(EXIT_SUCCESS);
-}
 
 int main(int argc, char **argv) {
 	int gamesocket;
@@ -459,4 +447,10 @@ void spectate(int socket, char playername[]){
 
 	return;
 
+}
+
+void sig_handler(){	  //if a user/system interrupts
+	endwin();
+	printf("*** Client ended due to interrupt ***\n");		//printf may be interrupted but better than don't handling case
+	exit(EXIT_ERROR);
 }

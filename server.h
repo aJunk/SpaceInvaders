@@ -1,9 +1,3 @@
-#ifdef __linux__
-#define _POSIX_C_SOURCE 199309L
-#endif
-
-#define _BSD_SOURCE
-
 #ifndef SERVER_H_INCLUDED
 #define SERVER_H_INCLUDED
 

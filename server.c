@@ -6,6 +6,13 @@
  * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
  * UAS Technikum Wien, BMR14
  */
+
+#ifdef __linux__
+#define _POSIX_C_SOURCE 199309L
+#endif
+
+#define _BSD_SOURCE
+
 #include <unistd.h>
 #include <ncurses.h>
 #include <stdlib.h>
