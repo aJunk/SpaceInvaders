@@ -107,7 +107,7 @@ typedef struct{
     char name[PLAYER_NAME_LEN + 1];
     pid_t pid;
     uint16_t port;
-	uint16_t spectator_port;
+	  uint16_t spectator_port;
 }Game;
 
 typedef struct {
@@ -139,7 +139,6 @@ typedef struct{
 }Shot;
 
 //global functions
-void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
-void error_handler(int error_no, int mode);					//prints an error message according to value of error_no, exits with EXIT_ERROR
+void handle_package(uint8_t *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode);
 
 #endif

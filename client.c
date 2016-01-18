@@ -1,7 +1,7 @@
 /**************************************************************************
  * SPACEINVADORS GAME - CLIENT
  * Clientprogram for a TCP/IP based Spaceinvadors game for Linux and MacOS.
- * User can eigther start a new game or become a spectator of an ongoing game.
+ * User can either start a new game or become a spectator of an ongoing game.
  *
  * written by Philipp Gotzmann, Alexander Junk and Johannes Rauer
  * UAS Technikum Wien, BMR14
@@ -34,7 +34,7 @@
 //client-variables
 Player c_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
 Object c_obj[MX * MY] = {{{0,0}, 0, 0, NO_CHANGE}};
-char *client_data_exchange_container = NULL;
+uint8_t *client_data_exchange_container = NULL;
 char client_send_buf = 0;
 Shot c_shots[AMUNITION] = { {{0, 0}, 0} };
 char playername[PLAYER_NAME_LEN + 1] = "";
@@ -351,37 +351,52 @@ void init_shot(Player *_player, int input){
 }
 
   //GET FUNCTION TO EXTERNAL FILE
-void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
+void handle_package(uint8_t *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
+	uint8_t *tmp;
+
 	if(mode == DISASSEMBLE){
-    char *c_tmp = container;
-    memcpy(player, c_tmp, sizeof(Player));
-    c_tmp += sizeof(Player);
-    memcpy(shots, c_tmp, sizeof(Shot) * AMUNITION);
-    c_tmp += sizeof(Shot) * AMUNITION;
+    tmp = container;
+    memcpy(player, tmp, sizeof(Player));
+    tmp += sizeof(Player);
+    memcpy(shots, tmp, sizeof(Shot) * AMUNITION);
+    tmp += sizeof(Shot) * AMUNITION;
 
     uint16_t index = 0;
     uint16_t count = 0;
 
-    memcpy(&count, c_tmp, sizeof(uint16_t));
+    memcpy(&count, tmp, sizeof(uint16_t));
     if(count > 0){
       for(uint16_t i = 0; i < count; i++){
-        memcpy(&index, c_tmp + sizeof(uint16_t) + (sizeof(Object) + sizeof(uint16_t)) * i, sizeof(uint16_t));
-        memcpy(&(obj[index]), c_tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
+        memcpy(&index, tmp + sizeof(uint16_t) + (sizeof(Object) + sizeof(uint16_t)) * i, sizeof(uint16_t));
+        memcpy(&(obj[index]), tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
 
-				//look for destroied objects
-				//if(obj[index].life <= 0 && obj[index].status == UPDATED && SOUND)system(PLAYME_EXPLOSION);
-				if(obj[index].life <= 0 && obj[index].status == UPDATED && SOUND){
-					if (sound_queue == -1) {
-			        beep();
-			    }else{
-							write(sound_queue, "hit", 4);
-					}
-				}
+				//look for destroied objects & play
+				if(obj[index].life <= 0 && obj[index].status == UPDATED && SOUND) beep();
 
 				obj[index].status = NO_CHANGE;
       }
     }
-  }
+  }else if(mode == ASSEMBLE){
+
+    memset(container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
+    tmp = container;
+    memcpy(tmp, &player, sizeof(Player));
+    tmp += sizeof(Player);
+    memcpy(tmp, shots, sizeof(Shot) * AMUNITION);
+    tmp += sizeof(Shot) * AMUNITION;
+    uint16_t tmp_int = 0;
+    for(uint16_t i = 0; i < MX * MY; i++){
+      if(obj[i].status & UPDATED){
+				//printf("updated\n");
+        memcpy(tmp + sizeof(uint16_t) + (sizeof(Object) + sizeof(uint16_t)) * tmp_int, &i, sizeof(uint16_t));
+        memcpy(tmp + sizeof(uint16_t) + sizeof(Object) * tmp_int + sizeof(uint16_t) * (tmp_int + 1), &(obj[i]), sizeof(Object));
+        tmp_int++;
+        obj[i].status = NO_CHANGE;
+      }
+    }
+    memcpy(tmp, &tmp_int, sizeof(uint16_t));
+    tmp = NULL;
+	}
 }
 
 int connect2server(char ip[16], int port){

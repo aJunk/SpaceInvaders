@@ -62,5 +62,6 @@ void draw_obj(Object obj[MX * MY], char character);
 void draw_player(Player *_player,  char character);
 void draw_shot(Shot _shots[AMUNITION], char character);
 void draw_line(WINDOW* scr, uint16_t height_from_bottom);
+void error_handler(int error_no, int mode);					//prints an error message according to value of error_no, exits with EXIT_ERROR
 
 #endif

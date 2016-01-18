@@ -32,7 +32,7 @@
 //server-variables
 Player s_player = {{MX/2, MY-2}, 0, 5, 0, 1, 0};
 Object s_obj[MX * MY] = {{{0,0}, 0, 0, UPDATED}};
-char *server_data_exchange_container = NULL;
+uint8_t *server_data_exchange_container = NULL;
 char *server_res_buf = 0;
 Shot s_shots[AMUNITION] = { {{0, 0}, 0} };
 int spectator[MAXSPECT]={0};
@@ -442,12 +442,32 @@ int update_player(Player *_player,Object obj[MX * MY], uint16_t max_x, uint16_t 
 }
 
 //GET FUNCTION TO EXTERNAL FILE
-void handle_package(char *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
-  if(mode == ASSEMBLE){
+void handle_package(uint8_t *container, Player *player, Object obj[MX * MY], Shot shots[AMUNITION], int mode){
+	uint8_t *tmp;
+
+	if(mode == DISASSEMBLE){
+    tmp = container;
+    memcpy(player, tmp, sizeof(Player));
+    tmp += sizeof(Player);
+    memcpy(shots, tmp, sizeof(Shot) * AMUNITION);
+    tmp += sizeof(Shot) * AMUNITION;
+
+    uint16_t index = 0;
+    uint16_t count = 0;
+
+    memcpy(&count, tmp, sizeof(uint16_t));
+    if(count > 0){
+      for(uint16_t i = 0; i < count; i++){
+        memcpy(&index, tmp + sizeof(uint16_t) + (sizeof(Object) + sizeof(uint16_t)) * i, sizeof(uint16_t));
+        memcpy(&(obj[index]), tmp + sizeof(uint16_t) + sizeof(Object) * i + sizeof(uint16_t) * (i + 1), sizeof(Object));
+				obj[index].status = NO_CHANGE;
+      }
+    }
+  }else if(mode == ASSEMBLE){
 
     memset(container, 0, SET_SIZE_OF_DATA_EXCHANGE_CONTAINER);
-    char *tmp = container;
-    memcpy(tmp, &s_player, sizeof(Player));
+    tmp = container;
+    memcpy(tmp, &player, sizeof(Player));
     tmp += sizeof(Player);
     memcpy(tmp, shots, sizeof(Shot) * AMUNITION);
     tmp += sizeof(Shot) * AMUNITION;
