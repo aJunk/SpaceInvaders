@@ -157,6 +157,7 @@ void gameloop(int gamesocket){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
+	uint8_t goon = 1;
 
 
 
@@ -169,7 +170,7 @@ void gameloop(int gamesocket){
 	  usleep(DELAY);
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
-	while(1) {
+	while(goon) {
 	//clientside -> start
 
 		//GET TCP PACKAGE
@@ -195,7 +196,8 @@ void gameloop(int gamesocket){
 					if(ret < 0) error_handler(ERR_SEND);
 				free(client_data_exchange_container);
 				gameloop(gamesocket);
-				return;
+				goon = 0;
+				continue;
 			}
 		}
 
@@ -242,9 +244,8 @@ void gameloop(int gamesocket){
 				c_player.instructions |= QUIT;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
 					if(ret < 0) error_handler(ERR_SEND);
-				free(client_data_exchange_container);
-				gameloop(gamesocket);
-				break;
+				goon = 0;
+				continue;
 			}
 		}
 		else if(ch == 'p') disp_infoscr('p');		//game paused
@@ -253,8 +254,7 @@ void gameloop(int gamesocket){
 			if(ret == 'y'){					//really restart
 				c_player.instructions |= RESTART;
 				ret = send(gamesocket, &(c_player.instructions), sizeof(char), 0);
-					if(ret < 0) error_handler(ERR_SEND);
-				free(client_data_exchange_container);
+				if(ret < 0) error_handler(ERR_SEND);
 				gameloop(gamesocket);
 				return;
 			}
@@ -269,10 +269,10 @@ void gameloop(int gamesocket){
   // GAME ENDS HERE --------------------------------------------------
 
   beep();
-  free(client_data_exchange_container);
+	free(client_data_exchange_container);
   endwin();
 
-	// Disconnect from server
+	// Disconnect from serverterminal
 	ret = close(gamesocket);
 	if(ret < 0) error_handler(-29);
 
@@ -372,6 +372,7 @@ void spectate(int socket, char playername[]){
 	int ret = 0;
 	int msgSize = -1;
 	int ch;
+	uint8_t goon = 1;
 	uint8_t tmp_byte = 0;
 
   // GAME STARTS HERE ------------------------------------------------
@@ -385,7 +386,7 @@ void spectate(int socket, char playername[]){
 	send(socket, &tmp_byte, sizeof(tmp_byte), MSG_DONTWAIT);
 
   //BEGIN MAIN LOOP-------------------------------------------------------------
-	while(1) {
+	while(goon) {
 	  //clientside -> start
 		ch = wgetch(fieldscr);
 
@@ -394,9 +395,8 @@ void spectate(int socket, char playername[]){
 			if(ret == 'y'){
 			 	tmp_byte = ENDOFCON;
 				send(socket, &tmp_byte, sizeof(tmp_byte), 0);				//really exit
-				close(socket);
-				endwin();
-				exit(EXIT_SUCCESS);
+				goon = 0;
+				continue;
 			}/*else {
 
 			}		//TODO!! RESTORE SCREEN DUMP!! */
@@ -446,11 +446,9 @@ void spectate(int socket, char playername[]){
 																																			//never reached!! delete?
   beep();
   free(client_data_exchange_container);
-  endwin();
-
-	// Disconnect from server
 	ret = close(socket);
 	if(ret < 0) error_handler(-29);
+  endwin();
 
 	return;
 
