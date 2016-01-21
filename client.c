@@ -56,11 +56,12 @@ int main(int argc, char **argv) {
 	sigaction(SIGINT, &sig, NULL);
 	sigaction(SIGPIPE, &sig, NULL);
 
- sound_queue = open("S_QUEUE", O_RDWR);
+  sound_queue = open("S_QUEUE", O_RDWR);
 
+	//FIXED
 	// Check arguments
 	for(int i = 1; i < argc; i = i+2){
-		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0) error_handler(ERR_INVALID_ARGUMENT, EXIT);		//Check if a wrong flag was entered
+		if(strcmp(argv[i], "-i") != 0 && strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-n") != 0) error_handler(ERR_C_ARG, EXIT);		//Check if a wrong flag was entered
 		if(strcmp(argv[i], "-i") == 0 && i+1 < argc) strcpy(ip, argv[i+1]);
 		if(strcmp(argv[i], "-p") == 0 && i+1 < argc) port = atoi(argv[i+1]);			//Convert string argument to int
 		if(strcmp(argv[i], "-n") == 0 && i+1 < argc){
@@ -72,7 +73,7 @@ int main(int argc, char **argv) {
 
 	//Connect
 	gamesocket = connect2server(ip, port);
-	if(gamesocket < 0) error_handler(ERR_CONNECT, EXIT);
+	if(gamesocket < 0) error_handler(gamesocket, EXIT);
 
 	init_graphix();
 	wrefresh(fieldscr);
@@ -157,7 +158,7 @@ int main(int argc, char **argv) {
 			close(gamesocket);
 			//conect to game as spectator
 			gamesocket = connect2server(ip, port);
-			if(gamesocket < 0) error_handler(ERR_CONNECT, EXIT);
+			if(gamesocket < 0) error_handler(gamesocket, EXIT);
 
 			spectate(gamesocket, tmp_game_mem[ch - 48].name);
 			break;
@@ -213,6 +214,7 @@ void gameloop(int gamesocket){
 			}
 		}
 
+		//FIXED -> obsolete
 		//DECODE TRANSMITTED PACKAGE
 		if(errno != EWOULDBLOCK) handle_package(client_data_exchange_container, &c_player, c_obj, c_shots, DISASSEMBLE);
 		//DECODE END!

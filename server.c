@@ -58,16 +58,19 @@ int main(int argc, char **argv){
 	sigaction(SIGINT, &sig, NULL);
 	sigaction(SIGPIPE, &sig, NULL);
 
+	//FIXED
 	// Check arguments
-	if(argc > 2){
+	if(argc == 3){
 		if(strcmp(argv[1], "-p") == 0) port = atoi(argv[2]);
 		else error_handler(ERR_S_ARG,EXIT);
+	}else if(argc != 1){
+		error_handler(ERR_S_ARG,EXIT);
 	}
 	if(port <= PORT_MIN || port >= PORT_MAX) error_handler(ERR_INVALID_PORT, EXIT);
 
 	// Launch gameserver
 	gamesocket = launch_gameserver(port);
-	if(gamesocket < 0) error_handler(ERR_CREATE_SOCKET,EXIT);
+	if(gamesocket < 0) error_handler(gamesocket,EXIT);
 	print_server_msg(0, SUCCESS, "Gameserver launched. Port: ", port, "");
 
 	// Get connections
@@ -277,6 +280,8 @@ void gameloop(int socket[], char playername[]){
 				print_server_msg(pid, INFO, "New Spectator connected. Total spectators: ", numspect, "");
 			}
 		}
+
+
 		for(i=0; i < MAXSPECT; i++){
 			if(spectator[i] != 0){
 					uint8_t tmp_byte = 0;
