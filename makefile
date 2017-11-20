@@ -1,16 +1,14 @@
-CFLAGS=-g -ansi -Wall -Wextra -Wfatal-errors -pedantic -pedantic-errors -m32
+
+CFLAGS= -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter
 INCLUDEFLAGES= -lncurses
 PNAME=invaders
 FETCHMEM=curl -L -O https://bintray.com/artifact/download/bruening/DrMemory/DrMemory-MacOS-1.8.1-0.tar.gz --progress-bar
 H_FILE_DIR=../include
 LIBTARGETDIR=../lib
-STATICLIBFILENAME=libs
-DYNLIBFILENAME=
 LINE=\n-----------------------------------------------\n
 
-all: clean havedirs
-	gcc -c *.c -I./include $(INCLUDEFLAGES)
-	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(INCLUDEFLAGES)
+
+all: clean server client
 
 clean:
 	rm -rf *o $(PNAME) $(PNAME).*
@@ -19,20 +17,6 @@ havedirs:
 	@test -d $(H_FILE_DIR) || (mkdir $(H_FILE_DIR);echo "Yay, I proudly present to you, your first .h in your library! I put it in $(H_FILE_DIR) for you!\n")
 	@test -d $(STATICLIBTARGETDIR) || (mkdir $(STATICLIBTARGETDIR);echo "Yay, I proudly present to you, your first product in your library! I put it in $(STATICLIBTARGETDIR) for you!\n")
 
-static: clean havedirs
-	gcc -c $(STATICLIBFILENAME).c -I$(H_FILE_DIR) -m32
-	ar rcs $(STATICLIBFILENAME).a $(STATICLIBFILENAME).o
-	-rm $(LIBTARGETDIR)/$(STATICLIBFILENAME).a
-	mv $(STATICLIBFILENAME).a $(LIBTARGETDIR)
-	cp $(STATICLIBFILENAME).h $(H_FILE_DIR)/$(STATICLIBFILENAME).h
-
-dynamic: clean havedirs
-	gcc -v -dynamiclib -current_version 1.0  -o $(DYNLIBFILENAME).dylib -I../misc ../misc/*.a
-	file $(DYNLIBFILENAME).dylib
-	otool -L $(DYNLIBFILENAME).dylib
-	-rm $(LIBTARGETDIR)/$(DYNLIBFILENAME).dylib
-	mv $(DYNLIBFILENAME).dylib $(LIBTARGETDIR)
-	cp $(DYNLIBFILENAME).h $(H_FILE_DIR)/$(DYNLIBFILENAME).h
 
 run: all
 	clear
@@ -47,11 +31,19 @@ gdebug: all
 getdrmem:
 	@test -d ../../drmemory || (echo "\033[31m$(LINE)DRMemory seems to be missing!\nFetching NOW!\033[0m";$(FETCHMEM);echo "\033[31m$ Extracting package\033[0m";tar -zxf DrMemory-MacOS-1.8.1-0.tar.gz ;echo "\033[34m$(LINE)Deleting image!\033[0m";echo "\033[34m$(LINE)Moving extracted Folder!\033[0m";mv DrMemory-MacOS-1.8.1-0 drmemory;mv drmemory ../../;echo "\033[34mDONE$(LINE)\033[0m")
 
-server:
-		gcc socket_server.c -o server -std=c99 -Wall -Wextra -pedantic -Wno-unused-parameter
+game:
+	gcc -c game.c -I./include $(CFLAGS) $(INCLUDEFLAGES)
+	gcc -v *.o  -o $(PNAME) -I./lib/*.a -I./lib/*.dylib $(CFLAGS) $(INCLUDEFLAGES)
 
-master_server: clean
-				gcc master_server.c -o master_server -std=c99 -Wall -Wextra -pedantic -Wno-unused-parameter
+server: clean
+		gcc graphX.c server.c communication.c -o server $(CFLAGS) -lncurses
 
-client:
-		gcc socket_client.c -o client -std=c99 -D_BSD_SOURCE -Wall -Wextra -pedantic -Wno-unused-parameter
+client: clean
+	 gcc graphX.c client.c communication.c -o client $(CFLAGS) -lncurses -DNOSOUND
+
+client_withsound: clean
+	 gcc client.c  graphX.c communication.c -o client $(CFLAGS) -lncurses -DSOUND
+
+audio:
+	gcc audiodaemon.c -o adeamon -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES)
+	gcc audiosender.c -o asender -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES
