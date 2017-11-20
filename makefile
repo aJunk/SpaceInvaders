@@ -1,12 +1,12 @@
+
 CFLAGS= -std=gnu99 -Wall -Wextra -Wfatal-errors -pedantic -Wno-unused-parameter
 INCLUDEFLAGES= -lncurses
 PNAME=invaders
 FETCHMEM=curl -L -O https://bintray.com/artifact/download/bruening/DrMemory/DrMemory-MacOS-1.8.1-0.tar.gz --progress-bar
 H_FILE_DIR=../include
 LIBTARGETDIR=../lib
-STATICLIBFILENAME=libs
-DYNLIBFILENAME=
 LINE=\n-----------------------------------------------\n
+
 
 all: clean server client
 
@@ -16,6 +16,7 @@ clean:
 havedirs:
 	@test -d $(H_FILE_DIR) || (mkdir $(H_FILE_DIR);echo "Yay, I proudly present to you, your first .h in your library! I put it in $(H_FILE_DIR) for you!\n")
 	@test -d $(STATICLIBTARGETDIR) || (mkdir $(STATICLIBTARGETDIR);echo "Yay, I proudly present to you, your first product in your library! I put it in $(STATICLIBTARGETDIR) for you!\n")
+
 
 run: all
 	clear
@@ -45,4 +46,4 @@ client_withsound: clean
 
 audio:
 	gcc audiodaemon.c -o adeamon -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES)
-	gcc audiosender.c -o asender -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES)
+	gcc audiosender.c -o asender -std=gnu99 $(CFLAGS) $(INCLUDEFLAGES
